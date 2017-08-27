@@ -1,4 +1,6 @@
 import sys
+import json
+import sqlite3
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QFont
@@ -97,9 +99,10 @@ class MainApp(QMainWindow):
 
         # search box
         searchbox = QLineEdit(self)
-        searchbox.setPlaceholderText('Enter search query here to filter the request list')
         searchbox_lbl = QLabel('Search Filter', self)
-
+        searchbox_lbl.setMargin(5)
+        searchbox.setPlaceholderText('Enter search query here to filter the request list')
+        
         # delete button
         delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
         delete_act.setStatusTip('Delete the selected requests')
@@ -234,7 +237,7 @@ class MainApp(QMainWindow):
         # Delete key to remove entries from the requests table
         self.shortcut = QShortcut(QKeySequence("Delete"), self)
         self.shortcut.activated.connect(self.delete_row)
-
+        self.create_db()
         self.show()
 
     def center_widget(self):
@@ -269,9 +272,108 @@ class MainApp(QMainWindow):
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
 
+    def create_db(self):
+        conn = sqlite3.connect('har.db')
+        c = conn.cursor()
+
+        c.execute('''CREATE TABLE IF NOT EXISTS requests
+        (timestamp              DATETIME           NOT NULL,
+        time                    TEXT,
+        server_ip               TEXT,
+        port                    TEXT,
+        request_body_size       TEXT,
+        request_method          TEXT,
+        request_url             TEXT,
+        request_http_version    TEXT,
+        request_headers         TEXT,
+        request_cookies         TEXT,
+        request_query_string    TEXT,
+        response_status         TEXT,
+        response_status_text    TEXT,
+        response_http_version   TEXT,
+        response_headers        TEXT,
+        response_cookies        TEXT,
+        response_body           TEXT,
+        response_redirect_url   TEXT,
+        response_headers_size   TEXT,
+        response_body_size      TEXT,
+        timings_blocked         TEXT,
+        timings_dns             TEXT,
+        timings_connect         TEXT,
+        timings_send            TEXT,
+        timings_wait            TEXT,
+        timings_receive         TEXT,
+        timings_ssl             TEXT
+        )''')
+
+        my_dict = {
+            'timestamp':'', 
+            'time':'', 
+            'server_ip':'', 
+            'port':'', 
+            'request_body_size':'', 
+            'request_method':'', 
+            'request_url':'', 
+            'request_headers':'', 
+            'request_cookies':'', 
+            'request_query_string':'', 
+            'response_status':'', 
+            'response_status_text':'', 
+            'response_http_version':'', 
+            'response_headers':'', 
+            'response_cookies':'', 
+            'response_body':'', 
+            'response_redirect_url':'', 
+            'response_headers_size':'', 
+            'response_body_size':'', 
+            'timings_blocked':'', 
+            'timings_dns':'', 
+            'timings_connect':'', 
+            'timings_send':'', 
+            'timings_wait':'',
+            'timings_receive':'',
+            'timings_ssl':''
+        }
+
+        with open('archive.har') as har:    
+            har = json.load(har)
+        for entry in har['log']['entries']:
+            try:
+                my_dict['timestamp'] = entry['startedDateTime']
+            except KeyError:
+                pass
+            try:
+                my_dict['time'] = entry['time']
+            except KeyError:
+                pass
+            try:
+                my_dict['server_ip'] = entry['serverIPAddress']
+            except KeyError:
+                pass
+            try:
+                my_dict['port'] = entry['connection']
+            except KeyError:
+                pass
+            try:                 
+                my_dict['request_body_size'] = entry['request']['bodySize']
+            except KeyError:
+                pass
+
+            c.execute("INSERT INTO requests \
+                            VALUES (?, ?, ?, ?, ?)", 
+                        (my_dict['timestamp'],
+                        my_dict['time'],
+                        my_dict['server_ip'],
+                        my_dict['port'],
+                        my_dict['request_body_size']
+                        ))
+        conn.commit()
+        conn.close()
+
+
 def main():
     app = QApplication(sys.argv)
-    # app.setFont(QFont('Segoe UI', 10))
+    app.setFont(QFont('Segoe UI', 10))
     main_harshark = MainApp()
     sys.exit(app.exec_())
 
