@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtWidgets import QWidget
@@ -23,7 +24,8 @@ from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QListWidget
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtWidgets import QTabWidget
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QMenu
+
 
 class MainApp(QMainWindow):
 
@@ -42,7 +44,7 @@ class MainApp(QMainWindow):
         # center on the desktop
         self.center_widget()
         # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer')
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.1')
         # app icon
         self.setWindowIcon(QIcon('..\images\logo2.png'))
 
@@ -57,14 +59,26 @@ class MainApp(QMainWindow):
         view_menu = menubar.addMenu('&View')
         options_menu = menubar.addMenu('&Options')
 
-        # open action
+        # open 
         open_act = QAction(QIcon('..\images\open.png'), '&Open', self)
         open_act.setShortcut('Ctrl+O')
         open_act.setStatusTip('Open a HAR file')
         # @TODO Open file explorer
         file_menu.addAction(open_act)
 
-        # quit action
+        # open recent
+        open_recent = QMenu('Open &Recent', self)
+        file_menu.addMenu(open_recent)
+
+        # @TODO Generate a list of recent files
+        open_recent_act_1 = QAction('Recent item 1', self)
+        open_recent_act_2 = QAction('Recent item 2', self)
+        open_recent_act_3 = QAction('Recent item 3', self)
+        open_recent.addAction(open_recent_act_1)
+        open_recent.addAction(open_recent_act_2)
+        open_recent.addAction(open_recent_act_3)
+
+        # quit 
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
         exit_act.setStatusTip('Exit Harshark')
@@ -75,8 +89,11 @@ class MainApp(QMainWindow):
         # TOOLBAR
         # ---------------------------------------------------------
        
-        # create a toolbar
-        self.toolbar = self.addToolBar('Search & Filter')
+        # create a toolbar for searching
+        self.toolbar_actions = self.addToolBar('Useful commands')
+        self.toolbar_search = self.addToolBar('Search & Filter')
+        self.toolbar_actions.setFloatable(False)
+        self.toolbar_search.setFloatable(False)
 
         # search box
         searchbox = QLineEdit(self)
@@ -85,13 +102,12 @@ class MainApp(QMainWindow):
 
         # delete button
         delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
-        delete_act.setShortcut('Delete')
         delete_act.setStatusTip('Delete the selected requests')
         delete_act.triggered.connect(self.delete_row)
 
-        self.toolbar.addAction(delete_act)
-        self.toolbar.addWidget(searchbox_lbl)
-        self.toolbar.addWidget(searchbox)
+        self.toolbar_actions.addAction(delete_act)
+        self.toolbar_search.addWidget(searchbox_lbl)
+        self.toolbar_search.addWidget(searchbox)
 
         # ---------------------------------------------------------
         # REQUEST TABLE
