@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QHBoxLayout
@@ -21,9 +22,8 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QListWidget
 from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtGui import QKeySequence
-
-
 
 class MainApp(QMainWindow):
 
@@ -38,7 +38,7 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
 
         # main resolution
-        self.resize(800, 600)
+        self.resize(1600, 900)
         # center on the desktop
         self.center_widget()
         # app title
@@ -92,10 +92,9 @@ class MainApp(QMainWindow):
         self.toolbar.addAction(delete_act)
         self.toolbar.addWidget(searchbox_lbl)
         self.toolbar.addWidget(searchbox)
-        
 
         # ---------------------------------------------------------
-        # MAIN SPLITTER
+        # REQUEST TABLE
         # ---------------------------------------------------------
 
         # table widget which contains all requests
@@ -104,15 +103,107 @@ class MainApp(QMainWindow):
         self.my_table.setColumnCount(10)
         self.my_table.setSelectionBehavior(QTableWidget.SelectRows)
 
-        # @TODO These should be non-editable widgets
-        text_edit_2 = QTextEdit()
-        text_edit_2.setReadOnly(True)
-        text_edit_3 = QTextEdit()
-        text_edit_3.setReadOnly(True)
+        # ---------------------------------------------------------
+        # REQUEST TAB
+        # ---------------------------------------------------------
+
+        request_tabs = QTabWidget()
+
+        request_headers_tab = QWidget()
+        request_body_tab = QWidget()
+        request_query_tab = QWidget()
+        request_cookie_tab = QWidget()
+        request_raw_tab = QWidget()
+
+        request_tabs.addTab(request_headers_tab, 'Request Headers')
+        request_tabs.addTab(request_body_tab, 'Request Body')
+        request_tabs.addTab(request_query_tab, 'Request Query Strings')
+        request_tabs.addTab(request_cookie_tab, 'Request Cookies')
+        request_tabs.addTab(request_raw_tab, 'Raw Request')
+
+        request_headers_tab_text = QTextEdit()
+        request_body_tab_text = QTextEdit()
+        request_query_tab_text = QTextEdit()
+        request_cookie_tab_text = QTextEdit()
+        request_raw_tab_text = QTextEdit()
+
+        request_headers_tab_text.setReadOnly(False)
+        request_body_tab_text.setReadOnly(False)
+        request_query_tab_text.setReadOnly(False)
+        request_cookie_tab_text.setReadOnly(False)
+        request_raw_tab_text.setReadOnly(False)        
+
+        request_headers_tab_layout = QVBoxLayout()
+        request_body_tab_layout = QVBoxLayout()
+        request_query_tab_layout = QVBoxLayout()
+        request_cookie_tab_layout = QVBoxLayout()
+        request_raw_tab_layout = QVBoxLayout()
+
+        request_headers_tab_layout.addWidget(request_headers_tab_text)
+        request_headers_tab.setLayout(request_headers_tab_layout)
+        request_body_tab_layout.addWidget(request_body_tab_text)
+        request_body_tab.setLayout(request_body_tab_layout)
+        request_query_tab_layout.addWidget(request_query_tab_text)
+        request_query_tab.setLayout(request_query_tab_layout)
+        request_cookie_tab_layout.addWidget(request_cookie_tab_text)
+        request_cookie_tab.setLayout(request_cookie_tab_layout)
+        request_raw_tab_layout.addWidget(request_raw_tab_text)
+        request_raw_tab.setLayout(request_raw_tab_layout)
+
+        # ---------------------------------------------------------
+        # RESPONSE TAB
+        # ---------------------------------------------------------
+        
+        response_tabs = QTabWidget()
+
+        response_headers_tab = QWidget()
+        response_body_tab = QWidget()
+        response_query_tab = QWidget()
+        response_cookie_tab = QWidget()
+        response_raw_tab = QWidget()
+
+        response_tabs.addTab(response_headers_tab, 'Response Headers')
+        response_tabs.addTab(response_body_tab, 'Response Body')
+        response_tabs.addTab(response_query_tab, 'Response Query Strings')
+        response_tabs.addTab(response_cookie_tab, 'Response Cookies')
+        response_tabs.addTab(response_raw_tab, 'Raw response')
+
+        response_headers_tab_text = QTextEdit()
+        response_body_tab_text = QTextEdit()
+        response_query_tab_text = QTextEdit()
+        response_cookie_tab_text = QTextEdit()
+        response_raw_tab_text = QTextEdit()
+
+        response_headers_tab_text.setReadOnly(False)
+        response_body_tab_text.setReadOnly(False)
+        response_query_tab_text.setReadOnly(False)
+        response_cookie_tab_text.setReadOnly(False)
+        response_raw_tab_text.setReadOnly(False)        
+
+        response_headers_tab_layout = QVBoxLayout()
+        response_body_tab_layout = QVBoxLayout()
+        response_query_tab_layout = QVBoxLayout()
+        response_cookie_tab_layout = QVBoxLayout()
+        response_raw_tab_layout = QVBoxLayout()
+
+        response_headers_tab_layout.addWidget(response_headers_tab_text)
+        response_headers_tab.setLayout(response_headers_tab_layout)
+        response_body_tab_layout.addWidget(response_body_tab_text)
+        response_body_tab.setLayout(response_body_tab_layout)
+        response_query_tab_layout.addWidget(response_query_tab_text)
+        response_query_tab.setLayout(response_query_tab_layout)
+        response_cookie_tab_layout.addWidget(response_cookie_tab_text)
+        response_cookie_tab.setLayout(response_cookie_tab_layout)
+        response_raw_tab_layout.addWidget(response_raw_tab_text)
+        response_raw_tab.setLayout(response_raw_tab_layout)
+
+        # ---------------------------------------------------------
+        # WIDGET SPLITTER
+        # ---------------------------------------------------------
 
         splitter_hor = QSplitter(Qt.Horizontal)
-        splitter_hor.addWidget(text_edit_2)
-        splitter_hor.addWidget(text_edit_3)
+        splitter_hor.addWidget(request_tabs)
+        splitter_hor.addWidget(response_tabs)
 
         splitter_ver = QSplitter(Qt.Vertical)
         splitter_ver.addWidget(self.my_table)
