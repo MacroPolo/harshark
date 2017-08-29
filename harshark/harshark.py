@@ -273,6 +273,14 @@ class MainApp(QMainWindow):
             number_of_selection_groups -= 1
 
     def create_db(self):
+        # @FACTOR this whole part is horrible, I'm sorry I tried my best!
+        
+        def error_check(db_field, har_field, har_section):
+            try:
+                db_fields[db_field] = str(har_section[har_field])
+            except KeyError:
+                pass
+
         conn = sqlite3.connect('har.db')
         c = conn.cursor()
 
@@ -288,6 +296,8 @@ class MainApp(QMainWindow):
         request_headers         TEXT,
         request_cookies         TEXT,
         request_query_string    TEXT,
+        request_header_size     TEXT,
+        request_post_body       TEXT,
         response_status         TEXT,
         response_status_text    TEXT,
         response_http_version   TEXT,
@@ -306,7 +316,7 @@ class MainApp(QMainWindow):
         timings_ssl             TEXT
         )''')
 
-        my_dict = {
+        db_fields = {
             'timestamp':'', 
             'time':'', 
             'server_ip':'', 
@@ -314,9 +324,12 @@ class MainApp(QMainWindow):
             'request_body_size':'', 
             'request_method':'', 
             'request_url':'', 
+            'request_http_version':'',
             'request_headers':'', 
             'request_cookies':'', 
             'request_query_string':'', 
+            'request_header_size':'',
+            'request_post_body':'', 
             'response_status':'', 
             'response_status_text':'', 
             'response_http_version':'', 
@@ -338,34 +351,69 @@ class MainApp(QMainWindow):
         with open('archive.har') as har:    
             har = json.load(har)
         for entry in har['log']['entries']:
-            try:
-                my_dict['timestamp'] = entry['startedDateTime']
-            except KeyError:
-                pass
-            try:
-                my_dict['time'] = entry['time']
-            except KeyError:
-                pass
-            try:
-                my_dict['server_ip'] = entry['serverIPAddress']
-            except KeyError:
-                pass
-            try:
-                my_dict['port'] = entry['connection']
-            except KeyError:
-                pass
-            try:                 
-                my_dict['request_body_size'] = entry['request']['bodySize']
-            except KeyError:
-                pass
+            error_check('timestamp', 'startedDateTime', entry)
+            error_check('time', 'time', entry)            
+            error_check('server_ip', 'serverIPAddress', entry)
+            error_check('port', 'connection', entry)
+            error_check('request_body_size', 'bodySize', entry['request'])
+            error_check('request_method', 'method', entry['request'])
+            error_check('request_url', 'url', entry['request'])
+            error_check('request_http_version', 'httpVersion', entry['request'])
+            error_check('request_header_size', 'headersSize', entry['request'])
+            error_check('request_headers', 'headers', entry['request'])
+            error_check('request_cookies', 'cookies', entry['request'])
+            error_check('request_query_string', 'queryString', entry['request'])
+            error_check('request_post_body', 'postData', entry['request'])
+            error_check('response_status', 'status', entry['response'])
+            error_check('response_status_text', 'statusText', entry['request'])
+            error_check('response_http_version', 'httpVersion', entry['request'])
+            error_check('response_headers', 'headers', entry['request'])
+            error_check('response_cookies', 'cookies', entry['request'])
+            error_check('response_body', 'content', entry['request'])
+            error_check('response_redirect_url', 'redirectURL', entry['request'])
+            error_check('response_headers_size', 'headersSize', entry['request'])
+            error_check('response_body_size', 'bodySize', entry['request'])
+            error_check('timings_blocked', 'blocked', entry['timings'])
+            error_check('timings_dns', 'dns', entry['timings'])
+            error_check('timings_connect', 'connect', entry['timings'])
+            error_check('timings_send', 'send', entry['timings'])
+            error_check('timings_wait', 'wait', entry['timings'])
+            error_check('timings_receive', 'receive', entry['timings'])
+            error_check('timings_ssl', 'ssl', entry['timings'])
 
             c.execute("INSERT INTO requests \
-                            VALUES (?, ?, ?, ?, ?)", 
-                        (my_dict['timestamp'],
-                        my_dict['time'],
-                        my_dict['server_ip'],
-                        my_dict['port'],
-                        my_dict['request_body_size']
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
+                                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
+                                    ?, ?, ?, ?, ?)", 
+                        (db_fields['timestamp'],
+                        db_fields['time'],
+                        db_fields['server_ip'],
+                        db_fields['port'],
+                        db_fields['request_body_size'],
+                        db_fields['request_method'],
+                        db_fields['request_url'],
+                        db_fields['request_http_version'],
+                        db_fields['request_headers'],
+                        db_fields['request_cookies'],
+                        db_fields['request_query_string'],
+                        db_fields['request_header_size'],
+                        db_fields['request_post_body'],
+                        db_fields['response_status'],
+                        db_fields['response_status_text'],
+                        db_fields['response_http_version'],
+                        db_fields['response_headers'],
+                        db_fields['response_cookies'],
+                        db_fields['response_body'],
+                        db_fields['response_redirect_url'],
+                        db_fields['response_headers_size'],
+                        db_fields['response_body_size'],
+                        db_fields['timings_blocked'],
+                        db_fields['timings_dns'],
+                        db_fields['timings_connect'],
+                        db_fields['timings_send'],
+                        db_fields['timings_wait'],
+                        db_fields['timings_receive'],
+                        db_fields['timings_ssl']
                         ))
         conn.commit()
         conn.close()
