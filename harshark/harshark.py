@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtWidgets import QHBoxLayout
 from PyQt5.QtWidgets import QTableWidget
+from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtWidgets import QComboBox
@@ -118,8 +119,6 @@ class MainApp(QMainWindow):
 
         # table widget which contains all requests
         self.my_table = QTableWidget()
-        self.my_table.setRowCount(5)
-        self.my_table.setColumnCount(10)
         self.my_table.setSelectionBehavior(QTableWidget.SelectRows)
 
         # ---------------------------------------------------------
@@ -237,7 +236,9 @@ class MainApp(QMainWindow):
         # Delete key to remove entries from the requests table
         self.shortcut = QShortcut(QKeySequence("Delete"), self)
         self.shortcut.activated.connect(self.delete_row)
+
         self.create_db()
+        self.populate_db()
         self.show()
 
     def center_widget(self):
@@ -418,6 +419,21 @@ class MainApp(QMainWindow):
         conn.commit()
         conn.close()
 
+    def populate_db(self):
+        conn = sqlite3.connect('har.db')
+        c = conn.cursor()
+
+        rowcount = c.execute('''SELECT COUNT(*) FROM requests''').fetchone()[0]
+        self.my_table.setRowCount(rowcount)
+        self.my_table.setColumnCount(29)
+        self.my_table.setHorizontalHeaderLabels(['Name', 'Age', 'Sex', 'Add'])
+        c.execute('''SELECT * FROM requests''')
+        for row, data in enumerate(c):
+            for column, item in enumerate(data):
+                self.my_table.setItem(row, column, QTableWidgetItem(str(item)))
+
+        conn.commit()
+        conn.close()
 
 def main():
     app = QApplication(sys.argv)
