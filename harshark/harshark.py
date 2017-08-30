@@ -29,6 +29,8 @@ from PyQt5.QtWidgets import QListWidget
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QMenu
+from PyQt5.QtWidgets import QAbstractScrollArea
+from PyQt5.QtWidgets import QHeaderView
 
 from harparse import HarParse
 
@@ -37,6 +39,7 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.initShortcuts()
 
     def initUI(self):
         # ---------------------------------------------------------
@@ -46,7 +49,7 @@ class MainApp(QMainWindow):
         # main resolution
         self.resize(1600, 900)
         # center on the desktop
-        self.center_widget()
+        self.centerWidget()
         # app title
         self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.1')
         # app icon
@@ -108,7 +111,7 @@ class MainApp(QMainWindow):
         # delete button
         delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
         delete_act.setStatusTip('Delete the selected requests')
-        delete_act.triggered.connect(self.delete_row)
+        delete_act.triggered.connect(self.deleteRow)
 
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_search.addWidget(searchbox_lbl)
@@ -121,9 +124,26 @@ class MainApp(QMainWindow):
         # table widget which contains all requests
         self.my_table = QTableWidget()
         self.my_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.my_table.setColumnCount(29)
-        self.my_table.setHorizontalHeaderLabels(['Name', 'Age', 'Sex', 'Add'])
-
+        self.my_table.setColumnCount(11)
+        self.my_table.setHorizontalHeaderLabels([
+                                        'Timestamp', 
+                                        'Request Time', 
+                                        'Server IP', 
+                                        'Request Method',
+                                        'Request URL',
+                                        'HTTP Version',
+                                        'Request Header Size',
+                                        'Request Body Size',
+                                        'Response Code',
+                                        'Response Header Size',
+                                        'Response Body Size'
+                                        ])
+        self.my_table.resizeColumnsToContents() 
+        self.my_table.setColumnWidth(0, 200)
+        self.my_table.setColumnWidth(2, 100)
+        self.my_table.setColumnWidth(4, 600)
+        self.my_table.horizontalHeader().setStretchLastSection(True)
+    
         # ---------------------------------------------------------
         # REQUEST TAB
         # ---------------------------------------------------------
@@ -233,22 +253,19 @@ class MainApp(QMainWindow):
         self.setCentralWidget(splitter_ver)
 
         # ---------------------------------------------------------
-        # KEYBOARD SHORTCUTS
-        # ---------------------------------------------------------
-
-        # Delete key to remove entries from the requests table
-        self.shortcut = QShortcut(QKeySequence("Delete"), self)
-        self.shortcut.activated.connect(self.delete_row)
-
-        # ---------------------------------------------------------
         # MAIN
         # ---------------------------------------------------------
 
         HarParse(harfile='archive2.har')
-        self.fill_table()
+        self.fillTable()
         self.show()
 
-    def center_widget(self):
+    def initShortcuts(self):
+        # Delete key to remove entries from the requests table
+        self.shortcut = QShortcut(QKeySequence("Delete"), self)
+        self.shortcut.activated.connect(self.deleteRow)
+
+    def centerWidget(self):
         """Center the widget on the desktop."""
         # get the rectangle geometry of the widget including the frame
         widget_rectangle = self.frameGeometry()
@@ -259,7 +276,7 @@ class MainApp(QMainWindow):
         # move the top left of the widget to the top left of widget_rectangle
         self.move(widget_rectangle.topLeft())
 
-    def delete_row(self):
+    def deleteRow(self):
         """delete the selected rows from the requests table when hitting the 
         'delete' key
         """
@@ -280,14 +297,18 @@ class MainApp(QMainWindow):
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
 
-    def fill_table(self):
+    def fillTable(self):
         conn = sqlite3.connect('har.db')
         c = conn.cursor()
 
         row_count = c.execute('''SELECT COUNT(*) FROM requests''').fetchone()[0]
         self.my_table.setRowCount(row_count)
 
-        c.execute('''SELECT * FROM requests''')
+        c.execute('''SELECT timestamp, time, server_ip, request_method, 
+                            request_url, response_http_version, request_header_size,
+                            request_body_size, response_status, response_headers_size,
+                            response_body_size
+                       FROM requests''')
         for row, data in enumerate(c):
             for column, item in enumerate(data):
                 self.my_table.setItem(row, column, QTableWidgetItem(str(item)))
