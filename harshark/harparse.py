@@ -1,15 +1,18 @@
 import codecs
 import json
+import random
 import sqlite3
+import string
 
 class HarParse():
 
     def __init__(self, harfile=''):
         self.har_file = harfile
         self.har_db = 'har.db'
+        self.id = ''
         self.initDb()
         self.parse()
-
+        
     def initDb(self):
         conn = sqlite3.connect(self.har_db)
         c = conn.cursor()
@@ -20,7 +23,8 @@ class HarParse():
             pass
 
         c.execute('''CREATE TABLE IF NOT EXISTS requests
-        (timestamp              DATETIME,
+        (id                     TEXT            PRIMARY KEY,
+        timestamp               DATETIME,
         time                    TEXT,
         server_ip               TEXT,
         port                    TEXT,
@@ -32,7 +36,7 @@ class HarParse():
         request_cookies         TEXT,
         request_query_string    TEXT,
         request_header_size     TEXT,
-        request_post_body       TEXT,
+        request_body            TEXT,
         response_status         TEXT,
         response_status_text    TEXT,
         response_http_version   TEXT,
@@ -86,17 +90,24 @@ class HarParse():
             'timings_ssl':''
         }
 
+    def generateId(self):
+        id = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(5))
+        self.id = id
+
+
     def keyCheck(self, db_field, har_field, har_section):
         try:
             self.db_fields[db_field] = str(har_section[har_field])
         except KeyError:
             pass
 
+
     def parse(self):
         with open(self.har_file, encoding='utf-8') as har:    
             har = json.load(har)
         
         for entry in har['log']['entries']:
+            self.generateId()
             self.keyCheck('timestamp', 'startedDateTime', entry)
             self.keyCheck('time', 'time', entry)            
             self.keyCheck('server_ip', 'serverIPAddress', entry)
@@ -135,8 +146,9 @@ class HarParse():
         c.execute("INSERT INTO requests \
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
                                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
-                                ?, ?, ?, ?, ?)", 
-                    (self.db_fields['timestamp'],
+                                ?, ?, ?, ?, ?, ?)",
+                    (self.id,
+                    self.db_fields['timestamp'],
                     self.db_fields['time'],
                     self.db_fields['server_ip'],
                     self.db_fields['port'],
