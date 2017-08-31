@@ -128,22 +128,24 @@ class MainApp(QMainWindow):
         self.my_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.my_table.setColumnCount(11)
         self.my_table.setHorizontalHeaderLabels([
-                                        'Timestamp', 
-                                        'Request Time', 
-                                        'Server IP', 
+                                        'id',
+                                        'Timestamp',
+                                        'Request Time',
+                                        'Server IP',
                                         'Request Method',
                                         'Request URL',
+                                        'Response Code',
                                         'HTTP Version',
                                         'Request Header Size',
                                         'Request Body Size',
-                                        'Response Code',
                                         'Response Header Size',
                                         'Response Body Size'
                                         ])
+        self.my_table.hideColumn(0)
         self.my_table.resizeColumnsToContents() 
-        self.my_table.setColumnWidth(0, 200)
-        self.my_table.setColumnWidth(2, 100)
-        self.my_table.setColumnWidth(4, 600)
+        self.my_table.setColumnWidth(1, 200)
+        self.my_table.setColumnWidth(3, 100)
+        self.my_table.setColumnWidth(5, 600)
         self.my_table.horizontalHeader().setStretchLastSection(True)
         self.my_table.cellClicked.connect(self.selectRow)
     
@@ -259,7 +261,7 @@ class MainApp(QMainWindow):
         # MAIN
         # ---------------------------------------------------------
 
-        HarParse(harfile='archive.har')
+        HarParse(harfile='archive3.har')
         self.fillTable()
         self.show()
 
@@ -322,14 +324,15 @@ class MainApp(QMainWindow):
         row_count = c.execute('''SELECT COUNT(*) FROM requests''').fetchone()[0]
         self.my_table.setRowCount(row_count)
 
-        c.execute('''SELECT timestamp, time, server_ip, request_method, 
-                            request_url, response_http_version, request_header_size,
-                            request_body_size, response_status, response_headers_size,
-                            response_body_size
+        c.execute('''SELECT id, timestamp, time, server_ip, request_method, 
+                            request_url, response_status, response_http_version, 
+                            request_header_size, request_body_size, 
+                            response_headers_size, response_body_size
                        FROM requests''')
         for row, data in enumerate(c):
             for column, item in enumerate(data):
                 self.my_table.setItem(row, column, QTableWidgetItem(str(item)))
+                self.my_table.setRowHeight(row, 26)
 
         conn.commit()
         conn.close()
