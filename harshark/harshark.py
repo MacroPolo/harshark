@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtWidgets import QWidget
@@ -124,6 +125,7 @@ class MainApp(QMainWindow):
         # table widget which contains all requests
         self.my_table = QTableWidget()
         self.my_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.my_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.my_table.setColumnCount(11)
         self.my_table.setHorizontalHeaderLabels([
                                         'Timestamp', 
@@ -143,6 +145,7 @@ class MainApp(QMainWindow):
         self.my_table.setColumnWidth(2, 100)
         self.my_table.setColumnWidth(4, 600)
         self.my_table.horizontalHeader().setStretchLastSection(True)
+        self.my_table.cellClicked.connect(self.selectRow)
     
         # ---------------------------------------------------------
         # REQUEST TAB
@@ -162,13 +165,13 @@ class MainApp(QMainWindow):
         request_tabs.addTab(request_cookie_tab, 'Request Cookies')
         request_tabs.addTab(request_raw_tab, 'Raw Request')
 
-        request_headers_tab_text = QTextEdit()
+        self.request_headers_tab_text = QTextEdit()
         request_body_tab_text = QTextEdit()
         request_query_tab_text = QTextEdit()
         request_cookie_tab_text = QTextEdit()
         request_raw_tab_text = QTextEdit()
 
-        request_headers_tab_text.setReadOnly(False)
+        self.request_headers_tab_text.setReadOnly(False)
         request_body_tab_text.setReadOnly(False)
         request_query_tab_text.setReadOnly(False)
         request_cookie_tab_text.setReadOnly(False)
@@ -180,7 +183,7 @@ class MainApp(QMainWindow):
         request_cookie_tab_layout = QVBoxLayout()
         request_raw_tab_layout = QVBoxLayout()
 
-        request_headers_tab_layout.addWidget(request_headers_tab_text)
+        request_headers_tab_layout.addWidget(self.request_headers_tab_text)
         request_headers_tab.setLayout(request_headers_tab_layout)
         request_body_tab_layout.addWidget(request_body_tab_text)
         request_body_tab.setLayout(request_body_tab_layout)
@@ -209,13 +212,13 @@ class MainApp(QMainWindow):
         response_tabs.addTab(response_cookie_tab, 'Response Cookies')
         response_tabs.addTab(response_raw_tab, 'Raw response')
 
-        response_headers_tab_text = QTextEdit()
+        self.response_headers_tab_text = QTextEdit()
         response_body_tab_text = QTextEdit()
         response_query_tab_text = QTextEdit()
         response_cookie_tab_text = QTextEdit()
         response_raw_tab_text = QTextEdit()
 
-        response_headers_tab_text.setReadOnly(False)
+        self.response_headers_tab_text.setReadOnly(False)
         response_body_tab_text.setReadOnly(False)
         response_query_tab_text.setReadOnly(False)
         response_cookie_tab_text.setReadOnly(False)
@@ -227,7 +230,7 @@ class MainApp(QMainWindow):
         response_cookie_tab_layout = QVBoxLayout()
         response_raw_tab_layout = QVBoxLayout()
 
-        response_headers_tab_layout.addWidget(response_headers_tab_text)
+        response_headers_tab_layout.addWidget(self.response_headers_tab_text)
         response_headers_tab.setLayout(response_headers_tab_layout)
         response_body_tab_layout.addWidget(response_body_tab_text)
         response_body_tab.setLayout(response_body_tab_layout)
@@ -256,7 +259,7 @@ class MainApp(QMainWindow):
         # MAIN
         # ---------------------------------------------------------
 
-        HarParse(harfile='archive2.har')
+        HarParse(harfile='archive.har')
         self.fillTable()
         self.show()
 
@@ -293,9 +296,24 @@ class MainApp(QMainWindow):
             last_row = selRange.bottomRow()
             # delete from first to last row in this selection        
             for j in range(last_row, fist_row - 1, -1):
-                self.my_table.removeRow(j)
+                self.my_table.hideRow(j)
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
+
+    def selectRow(self):
+        # print(self.my_table.currentRow())
+        conn = sqlite3.connect('har.db')
+        c = conn.cursor()
+        print("lookup")
+        c.execute('''SELECT request_headers
+                       FROM requests''')
+        data = c.fetchall()
+        self.request_headers_tab_text.setText(str(data))
+        c.execute('''SELECT response_headers
+                       FROM requests''')
+        data = c.fetchall()
+        self.response_headers_tab_text.setText(str(data))
+
 
     def fillTable(self):
         conn = sqlite3.connect('har.db')
