@@ -1,7 +1,7 @@
 import json
-import sys
+import pprint
 import sqlite3
-
+import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QFont
@@ -32,7 +32,6 @@ from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtWidgets import QHeaderView
-
 from harparse import HarParse
 
 class MainApp(QMainWindow):
@@ -40,21 +39,8 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.initShortcuts()
 
     def initUI(self):
-        # ---------------------------------------------------------
-        # MAIN SETTINGS
-        # ---------------------------------------------------------
-
-        # main resolution
-        self.resize(1600, 900)
-        # center on the desktop
-        self.centerWidget()
-        # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.1')
-        # app icon
-        self.setWindowIcon(QIcon('..\images\logo2.png'))
 
         # ---------------------------------------------------------
         # MENUBAR
@@ -147,7 +133,8 @@ class MainApp(QMainWindow):
         self.my_table.setColumnWidth(3, 100)
         self.my_table.setColumnWidth(5, 600)
         self.my_table.horizontalHeader().setStretchLastSection(True)
-        self.my_table.cellClicked.connect(self.selectRow)
+        # when row clicked, fetch the request/response 
+        self.my_table.itemSelectionChanged.connect(self.selectRow)
     
         # ---------------------------------------------------------
         # REQUEST TAB
@@ -165,19 +152,16 @@ class MainApp(QMainWindow):
         request_tabs.addTab(request_body_tab, 'Request Body')
         request_tabs.addTab(request_query_tab, 'Request Query Strings')
         request_tabs.addTab(request_cookie_tab, 'Request Cookies')
-        request_tabs.addTab(request_raw_tab, 'Raw Request')
 
         self.request_headers_tab_text = QTextEdit()
-        request_body_tab_text = QTextEdit()
-        request_query_tab_text = QTextEdit()
-        request_cookie_tab_text = QTextEdit()
-        request_raw_tab_text = QTextEdit()
+        self.request_body_tab_text = QTextEdit()
+        self.request_query_tab_text = QTextEdit()
+        self.request_cookie_tab_text = QTextEdit()
 
         self.request_headers_tab_text.setReadOnly(False)
-        request_body_tab_text.setReadOnly(False)
-        request_query_tab_text.setReadOnly(False)
-        request_cookie_tab_text.setReadOnly(False)
-        request_raw_tab_text.setReadOnly(False)        
+        self.request_body_tab_text.setReadOnly(False)
+        self.request_query_tab_text.setReadOnly(False)
+        self.request_cookie_tab_text.setReadOnly(False)     
 
         request_headers_tab_layout = QVBoxLayout()
         request_body_tab_layout = QVBoxLayout()
@@ -187,14 +171,12 @@ class MainApp(QMainWindow):
 
         request_headers_tab_layout.addWidget(self.request_headers_tab_text)
         request_headers_tab.setLayout(request_headers_tab_layout)
-        request_body_tab_layout.addWidget(request_body_tab_text)
+        request_body_tab_layout.addWidget(self.request_body_tab_text)
         request_body_tab.setLayout(request_body_tab_layout)
-        request_query_tab_layout.addWidget(request_query_tab_text)
+        request_query_tab_layout.addWidget(self.request_query_tab_text)
         request_query_tab.setLayout(request_query_tab_layout)
-        request_cookie_tab_layout.addWidget(request_cookie_tab_text)
+        request_cookie_tab_layout.addWidget(self.request_cookie_tab_text)
         request_cookie_tab.setLayout(request_cookie_tab_layout)
-        request_raw_tab_layout.addWidget(request_raw_tab_text)
-        request_raw_tab.setLayout(request_raw_tab_layout)
 
         # ---------------------------------------------------------
         # RESPONSE TAB
@@ -212,36 +194,30 @@ class MainApp(QMainWindow):
         response_tabs.addTab(response_body_tab, 'Response Body')
         response_tabs.addTab(response_query_tab, 'Response Query Strings')
         response_tabs.addTab(response_cookie_tab, 'Response Cookies')
-        response_tabs.addTab(response_raw_tab, 'Raw response')
 
         self.response_headers_tab_text = QTextEdit()
-        response_body_tab_text = QTextEdit()
-        response_query_tab_text = QTextEdit()
-        response_cookie_tab_text = QTextEdit()
-        response_raw_tab_text = QTextEdit()
+        self.response_body_tab_text = QTextEdit()
+        self.response_query_tab_text = QTextEdit()
+        self.response_cookie_tab_text = QTextEdit()
 
         self.response_headers_tab_text.setReadOnly(False)
-        response_body_tab_text.setReadOnly(False)
-        response_query_tab_text.setReadOnly(False)
-        response_cookie_tab_text.setReadOnly(False)
-        response_raw_tab_text.setReadOnly(False)        
+        self.response_body_tab_text.setReadOnly(False)
+        self.response_query_tab_text.setReadOnly(False)
+        self.response_cookie_tab_text.setReadOnly(False)       
 
         response_headers_tab_layout = QVBoxLayout()
         response_body_tab_layout = QVBoxLayout()
         response_query_tab_layout = QVBoxLayout()
         response_cookie_tab_layout = QVBoxLayout()
-        response_raw_tab_layout = QVBoxLayout()
 
         response_headers_tab_layout.addWidget(self.response_headers_tab_text)
         response_headers_tab.setLayout(response_headers_tab_layout)
-        response_body_tab_layout.addWidget(response_body_tab_text)
+        response_body_tab_layout.addWidget(self.response_body_tab_text)
         response_body_tab.setLayout(response_body_tab_layout)
-        response_query_tab_layout.addWidget(response_query_tab_text)
+        response_query_tab_layout.addWidget(self.response_query_tab_text)
         response_query_tab.setLayout(response_query_tab_layout)
-        response_cookie_tab_layout.addWidget(response_cookie_tab_text)
+        response_cookie_tab_layout.addWidget(self.response_cookie_tab_text)
         response_cookie_tab.setLayout(response_cookie_tab_layout)
-        response_raw_tab_layout.addWidget(response_raw_tab_text)
-        response_raw_tab.setLayout(response_raw_tab_layout)
 
         # ---------------------------------------------------------
         # WIDGET SPLITTER
@@ -258,17 +234,30 @@ class MainApp(QMainWindow):
         self.setCentralWidget(splitter_ver)
 
         # ---------------------------------------------------------
-        # MAIN
+        # SHORTCUTS
         # ---------------------------------------------------------
 
-        HarParse(harfile='archive3.har')
-        self.fillTable()
-        self.show()
+        self.shortcut_del = QShortcut(QKeySequence("Delete"), self)
+        self.shortcut_del.activated.connect(self.deleteRow)
 
-    def initShortcuts(self):
-        # Delete key to remove entries from the requests table
-        self.shortcut = QShortcut(QKeySequence("Delete"), self)
-        self.shortcut.activated.connect(self.deleteRow)
+        # ---------------------------------------------------------
+        # MAIN
+        # ---------------------------------------------------------
+        
+        # app resolution
+        self.resize(1600, 900)
+        # center on the desktop
+        self.centerWidget()
+        # app title
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.1')
+        # app icon
+        self.setWindowIcon(QIcon('..\images\logo2.png'))
+        # parse the HAR file
+        HarParse(harfile='archive2.har')
+        # populate the entries table
+        self.populateTable()
+        # display the app
+        self.show()
 
     def centerWidget(self):
         """Center the widget on the desktop."""
@@ -298,26 +287,65 @@ class MainApp(QMainWindow):
             last_row = selRange.bottomRow()
             # delete from first to last row in this selection        
             for j in range(last_row, fist_row - 1, -1):
-                self.my_table.hideRow(j)
+                self.my_table.removeRow(j)
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
 
     def selectRow(self):
-        # print(self.my_table.currentRow())
+        self.request_headers_tab_text.setText('')
+        self.request_body_tab_text.setText('')
+        self.request_query_tab_text.setText('')
+        
+        row_id = self.my_table.item(self.my_table.currentRow(), 0).text()
+        
         conn = sqlite3.connect('har.db')
         c = conn.cursor()
-        print("lookup")
-        c.execute('''SELECT request_headers
-                       FROM requests''')
-        data = c.fetchall()
-        self.request_headers_tab_text.setText(str(data))
-        c.execute('''SELECT response_headers
-                       FROM requests''')
-        data = c.fetchall()
-        self.response_headers_tab_text.setText(str(data))
+        
+        c.execute('''SELECT request_headers, request_body, 
+                            request_query_string, request_cookies
+                       FROM requests
+                      WHERE id = ?''', (row_id,))
+        request_data = c.fetchall()
+        
+        # try:
+        request_json = json.loads(request_data[0][0])
+        
+        for element in request_json:
+            entry = '<b>{}</b> : {}'.format(element['name'], element['value'])
+            self.request_headers_tab_text.append(entry)
+        # except:
+        #     self.request_headers_tab_text.append('JSON parse error...raw dump\n')
+        #     self.request_headers_tab_text.append(str(request_data[0][0]))
 
+        try:
+            request_json = json.loads(request_data[0][1])
+            for param in request_json['params']:
+                self.request_body_tab_text.append(param)
+        except:
+            self.request_body_tab_text.append('JSON parse error...raw dump\n')
+            self.request_body_tab_text.append(str(request_data[0][1]))
 
-    def fillTable(self):
+        try:
+            request_json = json.loads(request_data[0][2])
+            for element in request_json:
+                entry = '<b>{}</b> : {}'.format(element['name'], element['value'])
+                self.request_query_tab_text.append(entry)
+        except:
+            self.request_query_tab_text.append('JSON parse error...raw dump\n')
+            self.request_query_tab_text.append(str(request_data[0][2]))
+
+        try:
+            request_json = json.loads(request_data[0][3])
+            for element in request_json:
+                entry = '<b>{}</b> : {}'.format(element['name'], element['value'])
+                self.request_cookie_tab_text.append(entry)
+        except:
+            self.request_cookie_tab_text.append('JSON parse error...raw dump\n')
+            self.request_cookie_tab_text.append(str(request_data[0][3]))
+        
+        conn.close()
+
+    def populateTable(self):
         conn = sqlite3.connect('har.db')
         c = conn.cursor()
 
@@ -329,17 +357,19 @@ class MainApp(QMainWindow):
                             request_header_size, request_body_size, 
                             response_headers_size, response_body_size
                        FROM requests''')
+
         for row, data in enumerate(c):
             for column, item in enumerate(data):
                 self.my_table.setItem(row, column, QTableWidgetItem(str(item)))
                 self.my_table.setRowHeight(row, 26)
 
-        conn.commit()
         conn.close()
 
 def main():
     app = QApplication(sys.argv)
     app.setFont(QFont('Segoe UI', 10))
+    app.setFont(QFont('Consolas', 10))
+    
     main_harshark = MainApp()
     sys.exit(app.exec_())
 

@@ -10,19 +10,21 @@ class HarParse():
         self.har_file = harfile
         self.har_db = 'har.db'
         self.id = ''
+        
+        self.conn = sqlite3.connect(self.har_db)
+        self.c = self.conn.cursor()
+
         self.initDb()
         self.parse()
-        
+
     def initDb(self):
-        conn = sqlite3.connect(self.har_db)
-        c = conn.cursor()
 
         try:
-            c.execute('DROP TABLE requests')
+            self.c.execute('DROP TABLE requests')
         except sqlite3.OperationalError:
             pass
 
-        c.execute('''CREATE TABLE IF NOT EXISTS requests
+        self.c.execute('''CREATE TABLE IF NOT EXISTS requests
         (id                     TEXT            PRIMARY KEY,
         timestamp               DATETIME,
         time                    TEXT,
@@ -55,8 +57,7 @@ class HarParse():
         timings_ssl             TEXT
         )''')
 
-        conn.commit()
-        conn.close()
+        self.conn.commit()
 
         self.db_fields = {
             'timestamp':'', 
@@ -105,7 +106,9 @@ class HarParse():
     def parse(self):
         with open(self.har_file, encoding='utf-8') as har:    
             har = json.load(har)
-        
+    
+        self.c.execute('BEGIN TRANSACTION')
+
         for entry in har['log']['entries']:
             self.generateId()
             self.keyCheck('timestamp', 'startedDateTime', entry)
@@ -139,11 +142,12 @@ class HarParse():
             self.keyCheck('timings_ssl', 'ssl', entry['timings'])
             self.updateDb()
 
-    def updateDb(self):
-        conn = sqlite3.connect(self.har_db)
-        c = conn.cursor()
+        self.c.execute('COMMIT')
+        self.conn.close()
 
-        c.execute("INSERT INTO requests \
+    def updateDb(self):
+
+        self.c.execute("INSERT INTO requests \
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
                                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \
                                 ?, ?, ?, ?, ?, ?)",
@@ -178,6 +182,3 @@ class HarParse():
                     self.db_fields['timings_receive'],
                     self.db_fields['timings_ssl']
                     ))
-        conn.commit()
-        conn.close()
-        
