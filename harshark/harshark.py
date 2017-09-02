@@ -114,7 +114,7 @@ class MainApp(QMainWindow):
         self.my_table = QTableWidget()
         self.my_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.my_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.my_table.setColumnCount(11)
+        self.my_table.setColumnCount(13)
         self.my_table.setHorizontalHeaderLabels([
                                         'id',
                                         'Timestamp',
@@ -124,11 +124,11 @@ class MainApp(QMainWindow):
                                         'Request URL',
                                         'Response Code',
                                         'HTTP Version',
+                                        'Mime Type',
                                         'Request Header Size',
                                         'Request Body Size',
                                         'Response Header Size',
                                         'Response Body Size',
-                                        'Mime Type'
                                         ])
         self.my_table.hideColumn(0)
         self.my_table.resizeColumnsToContents() 
@@ -162,6 +162,7 @@ class MainApp(QMainWindow):
         self.request_cookie_tab_text = QTextEdit(acceptRichText=False)
 
         self.request_headers_tab_text.setReadOnly(False)
+        self.request_body_tab_text.setReadOnly(False)
         self.request_body_tab_text.setReadOnly(False)
         self.request_query_tab_text.setReadOnly(False)
         self.request_cookie_tab_text.setReadOnly(False)     
@@ -200,9 +201,15 @@ class MainApp(QMainWindow):
         self.response_body_tab_text = QTextEdit()
         self.response_cookie_tab_text = QTextEdit()
 
-        self.response_headers_tab_text.setReadOnly(False)
-        self.response_body_tab_text.setReadOnly(False)
-        self.response_cookie_tab_text.setReadOnly(False)       
+        self.response_headers_tab_text.setReadOnly(True)
+        self.response_body_tab_text.setReadOnly(True)
+        self.response_cookie_tab_text.setReadOnly(True)
+        self.response_headers_tab_text.setAcceptRichText(False)
+        self.response_body_tab_text.setAcceptRichText(False)
+        self.response_cookie_tab_text.setAcceptRichText(False)
+        self.response_headers_tab_text.setUndoRedoEnabled(False)
+        self.response_body_tab_text.setUndoRedoEnabled(False)
+        self.response_cookie_tab_text.setUndoRedoEnabled(False) 
 
         response_headers_tab_layout = QVBoxLayout()
         response_body_tab_layout = QVBoxLayout()
@@ -249,7 +256,7 @@ class MainApp(QMainWindow):
         # app icon
         self.setWindowIcon(QIcon('..\images\logo2.png'))
         # parse the HAR file
-        self.harParse('archive2.har')
+        self.harParse('archive5.har')
         # HarParse(harfile='archive2.har')
         # populate the entries table
         # self.populateTable()
@@ -383,20 +390,26 @@ class MainApp(QMainWindow):
             row_data.append(id)
             row_data.append(entry['startedDateTime'])
             row_data.append(entry['time'])
-            row_data.append(entry['serverIPAddress'])
+            try:
+                row_data.append(entry['serverIPAddress'])
+            except KeyError:
+                row_data.append('')
             row_data.append(entry['request']['method'])
             row_data.append(entry['request']['url'])
             row_data.append(entry['response']['status'])
             row_data.append(entry['response']['httpVersion'])
+            row_data.append(entry['response']['content']['mimeType'])
             row_data.append(entry['request']['headersSize'])
             row_data.append(entry['request']['bodySize'])
             row_data.append(entry['response']['headersSize'])
             row_data.append(entry['response']['bodySize'])
-            row_data.append(entry['response']['content']['mimeType'])
             
             # fill the requests dictionaries
             self.request_headers_dict[id] = entry['request']['headers']
-            self.request_body_dict[id] = entry['request']['postData']['params']
+            try:
+                self.request_body_dict[id] = entry['request']['postData']
+            except KeyError:
+                self.request_body_dict[id] = ''
             self.request_cookies_dict[id] = entry['request']['cookies']
             self.request_queries_dict[id] = entry['request']['queryString']
 
@@ -412,6 +425,14 @@ class MainApp(QMainWindow):
             
 
     def selectRow(self):
+
+        body_safelist = [
+                'text/html;charset=UTF-8', 
+                'application/javascript',
+                'application/json;charset=utf-8',
+                'application/json;charset=UTF-8'
+        ]
+
         self.request_headers_tab_text.setPlainText('')
         self.request_body_tab_text.setPlainText('')
         self.request_query_tab_text.setPlainText('')
@@ -435,10 +456,16 @@ class MainApp(QMainWindow):
         for item in request_headers:
             entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
             self.request_headers_tab_text.append(str(entry))
-        # @FIX
-        # for item in request_body:
-        #     entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
-        #     self.request_body_tab_text.append(str(entry))
+
+        if request_body != '':
+            if request_body['mimeType'] in body_safelist:
+                try:
+                    entry = request_body['text']
+                    self.request_body_tab_text.insertPlainText(str(entry))
+                except KeyError:
+                    self.request_body_tab_text.insertPlainText('No request body found')
+            else:
+                self.request_body_tab_text.append('Binary Data')  
         
         for item in request_queries:
             entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
@@ -452,23 +479,23 @@ class MainApp(QMainWindow):
             entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
             self.response_headers_tab_text.append(str(entry))
 
-        body_safelist = ['text/html; charset=UTF-8', 'application/javascript', 'css', 'javascript', 'js', 'xml']
-        print(response_body['mimeType'])
         if response_body['mimeType'] in body_safelist:
-            entry = response_body['text']
-            self.response_body_tab_text.append(str(entry))
+            try:
+                entry = response_body['text']
+                self.response_body_tab_text.insertPlainText(str(entry))
+            except KeyError:
+                self.response_body_tab_text.insertPlainText('No response body found')
         else:
-            self.response_body_tab_text.append('Binary Data')
+            self.response_body_tab_text.append('Binary Data')      
         
         for item in response_cookies:
             entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
             self.response_cookie_tab_text.append(str(entry))
 
-    
 def main():
     app = QApplication(sys.argv)
     app.setFont(QFont('Segoe UI', 10))
-    app.setFont(QFont('Consolas', 10))
+    # app.setFont(QFont('Consolas', 10))
     
     main_harshark = MainApp()
     sys.exit(app.exec_())
