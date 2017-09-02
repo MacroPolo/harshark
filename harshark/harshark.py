@@ -1,3 +1,4 @@
+import ast
 import json
 import pprint
 import random
@@ -34,7 +35,6 @@ from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtWidgets import QHeaderView
-# from harparse import HarParse
 
 class MainApp(QMainWindow):
 
@@ -258,8 +258,6 @@ class MainApp(QMainWindow):
         # parse the HAR file
         self.harParse('archive5.har')
         # HarParse(harfile='archive2.har')
-        # populate the entries table
-        # self.populateTable()
         # display the app
         self.show()
 
@@ -295,81 +293,9 @@ class MainApp(QMainWindow):
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
 
-    # def selectRow(self):
-    #     self.request_headers_tab_text.setText('')
-    #     self.request_body_tab_text.setText('')
-    #     self.request_query_tab_text.setText('')
-        
-    #     row_id = self.my_table.item(self.my_table.currentRow(), 0).text()
-        
-    #     conn = sqlite3.connect('har.db')
-    #     c = conn.cursor()
-        
-    #     c.execute('''SELECT request_headers, request_body, 
-    #                         request_query_string, request_cookies
-    #                    FROM requests
-    #                   WHERE id = ?''', (row_id,))
-    #     request_data = c.fetchall()
-        
-    #     # try:
-    #     request_json = json.loads(request_data[0][0])
-        
-    #     for element in request_json:
-    #         entry = '<b>{}</b> : {}'.format(element['name'], element['value'])
-    #         self.request_headers_tab_text.append(entry)
-    #     # except:
-    #     #     self.request_headers_tab_text.append('JSON parse error...raw dump\n')
-    #     #     self.request_headers_tab_text.append(str(request_data[0][0]))
-
-    #     try:
-    #         request_json = json.loads(request_data[0][1])
-    #         for param in request_json['params']:
-    #             self.request_body_tab_text.append(param)
-    #     except:
-    #         self.request_body_tab_text.append('JSON parse error...raw dump\n')
-    #         self.request_body_tab_text.append(str(request_data[0][1]))
-
-    #     try:
-    #         request_json = json.loads(request_data[0][2])
-    #         for element in request_json:
-    #             entry = '<b>{}</b> : {}'.format(element['name'], element['value'])
-    #             self.request_query_tab_text.append(entry)
-    #     except:
-    #         self.request_query_tab_text.append('JSON parse error...raw dump\n')
-    #         self.request_query_tab_text.append(str(request_data[0][2]))
-
-    #     try:
-    #         request_json = json.loads(request_data[0][3])
-    #         for element in request_json:
-    #             entry = '<b>{}</b> : {}'.format(element['name'], element['value'])
-    #             self.request_cookie_tab_text.append(entry)
-    #     except:
-    #         self.request_cookie_tab_text.append('JSON parse error...raw dump\n')
-    #         self.request_cookie_tab_text.append(str(request_data[0][3]))
-        
-    #     conn.close()
-
-    # def populateTable(self):
-    #     conn = sqlite3.connect('har.db')
-    #     c = conn.cursor()
-
-    #     row_count = c.execute('''SELECT COUNT(*) FROM requests''').fetchone()[0]
-    #     self.my_table.setRowCount(row_count)
-
-    #     c.execute('''SELECT id, timestamp, time, server_ip, request_method, 
-    #                         request_url, response_status, response_http_version, 
-    #                         request_header_size, request_body_size, 
-    #                         response_headers_size, response_body_size
-    #                    FROM requests''')
-
-    #     for row, data in enumerate(c):
-    #         for column, item in enumerate(data):
-    #             self.my_table.setItem(row, column, QTableWidgetItem(str(item)))
-    #             self.my_table.setRowHeight(row, 26)
-
-    #     conn.close()
 
     def harParse(self, archive):
+        # @TODO error handling
         with open(archive, encoding='utf-8') as har:    
             har = json.load(har)
 
@@ -425,6 +351,7 @@ class MainApp(QMainWindow):
             
 
     def selectRow(self):
+        # @TODO tidy of exception handling and factor out
 
         body_safelist = [
                 'text/html;charset=UTF-8', 
@@ -488,6 +415,7 @@ class MainApp(QMainWindow):
         else:
             self.response_body_tab_text.append('Binary Data')      
         
+        # @TODO can we get detailed cookie info? expiry time, flags etc
         for item in response_cookies:
             entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
             self.response_cookie_tab_text.append(str(entry))
@@ -495,8 +423,7 @@ class MainApp(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     app.setFont(QFont('Segoe UI', 10))
-    # app.setFont(QFont('Consolas', 10))
-    
+  
     main_harshark = MainApp()
     sys.exit(app.exec_())
 
