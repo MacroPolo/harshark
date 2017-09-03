@@ -45,6 +45,28 @@ class MainApp(QMainWindow):
     def initUI(self):
 
         # ---------------------------------------------------------
+        # ACTIONS
+        # ---------------------------------------------------------
+
+        # open
+        open_act = QAction(QIcon('..\images\open.png'), '&Open', self)
+        open_act.setShortcut('Ctrl+O')
+        open_act.setStatusTip('Open a new HAR file')
+        open_act.triggered.connect(self.showOpenDialog)
+        
+        #delete
+        delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
+        delete_act.setStatusTip('Delete the selected requests')
+        delete_act.setShortcut('Delete')
+        delete_act.triggered.connect(self.deleteRow)
+
+        # quit
+        exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
+        exit_act.setShortcut('Ctrl+Q')
+        exit_act.setStatusTip('Exit Harshark')
+        exit_act.triggered.connect(qApp.quit)
+        
+        # ---------------------------------------------------------
         # MENUBAR
         # ---------------------------------------------------------
 
@@ -54,45 +76,29 @@ class MainApp(QMainWindow):
         view_menu = menu_bar.addMenu('&View')
         options_menu = menu_bar.addMenu('&Options')
 
-        # open
-        open_act = QAction(QIcon('..\images\open.png'), '&Open', self)
-        open_act.setShortcut('Ctrl+O')
-        open_act.setStatusTip('Open a HAR file')
-        open_act.triggered.connect(self.showDialog)
         file_menu.addAction(open_act)
-
-        # quit
-        exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
-        exit_act.setShortcut('Ctrl+Q')
-        exit_act.setStatusTip('Exit Harshark')
-        exit_act.triggered.connect(qApp.quit)
         file_menu.addAction(exit_act)
 
         # ---------------------------------------------------------
         # TOOLBAR
         # ---------------------------------------------------------
-       
-        # create a toolbar for searching
+        
         self.toolbar_actions = self.addToolBar('Useful commands')
         self.toolbar_search = self.addToolBar('Search & Filter')
-        self.toolbar_actions.setFloatable(False)
-        self.toolbar_search.setFloatable(False)
 
-        # search box
+        self.toolbar_search.setFloatable(False)
+        self.toolbar_actions.setFloatable(False)
+
+        self.toolbar_actions.addAction(open_act)
+        self.toolbar_actions.addAction(delete_act)
+
         searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
         searchbox_lbl.setMargin(5)
-        searchbox.setPlaceholderText('Enter search query here to filter the request list')
-        
-        # delete button
-        delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
-        delete_act.setStatusTip('Delete the selected requests')
-        delete_act.triggered.connect(self.deleteRow)
-
-        self.toolbar_actions.addAction(delete_act)
+        searchbox.setPlaceholderText('Enter search query here to highlight matches')
         self.toolbar_search.addWidget(searchbox_lbl)
         self.toolbar_search.addWidget(searchbox)
-
+        
         # ---------------------------------------------------------
         # STATUSBAR
         # ---------------------------------------------------------
@@ -124,8 +130,7 @@ class MainApp(QMainWindow):
         self.entry_table.setColumnCount(len(header_labels))
         self.entry_table.setHorizontalHeaderLabels(header_labels)
         self.entry_table.hideColumn(0)
-        self.entry_table.horizontalHeader().setStretchLastSection(True)
-        # when row clicked, fetch the request/response 
+        # when row clicked, fetch the request/response
         self.entry_table.itemSelectionChanged.connect(self.selectRow)
 
         # ---------------------------------------------------------
@@ -255,19 +260,12 @@ class MainApp(QMainWindow):
         self.setCentralWidget(splitter_ver)
 
         # ---------------------------------------------------------
-        # SHORTCUTS
-        # ---------------------------------------------------------
-
-        self.shortcut_del = QShortcut(QKeySequence("Delete"), self)
-        self.shortcut_del.activated.connect(self.deleteRow)
-
-        # ---------------------------------------------------------
         # MAIN
         # ---------------------------------------------------------
         
         self.showMaximized()
         # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.1')
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.2')
         # app icon
         self.setWindowIcon(QIcon('..\images\logo2.png'))
         # display the app
@@ -375,6 +373,17 @@ class MainApp(QMainWindow):
     def selectRow(self):
         # @TODO tidy of exception handling and factor out
 
+        # all rows have been deleted
+        if self.entry_table.currentRow() == -1:
+            self.request_headers_tab_text.setPlainText('')
+            self.request_body_tab_text.setPlainText('')
+            self.request_query_tab_text.setPlainText('')
+            self.request_cookie_tab_text.setPlainText('')
+            self.response_headers_tab_text.setPlainText('')
+            self.response_body_tab_text.setPlainText('')
+            self.response_cookie_tab_text.setPlainText('')
+            return
+
         body_safelist = [
                 'text', 
                 'html',
@@ -458,7 +467,7 @@ class MainApp(QMainWindow):
         # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
         # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
 
-    def showDialog(self):
+    def showOpenDialog(self):
         self.entry_table.setRowCount
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
         har = file_name[0]
