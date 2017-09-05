@@ -294,6 +294,9 @@ class MainApp(QMainWindow):
 
 
     def harParse(self, archive):
+
+        # remove any previous entries
+        self.entry_table.setRowCount(0)
         
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setMaximumWidth(300)
@@ -301,88 +304,135 @@ class MainApp(QMainWindow):
         self.status_bar.clearMessage()
         self.status_bar.addWidget(self.progress_bar)
 
-        with open(archive, encoding='utf-8') as har:    
-            har = json.load(har)
+        try:
+            with open(archive, encoding='utf-8') as har:
+                har = json.load(har)
+        except FileNotFoundError:
+            self.status_bar.removeWidget(self.progress_bar)
+            self.status_bar.showMessage('Ready')
+            return
+        except json.decoder.JSONDecodeError:
+            self.status_bar.removeWidget(self.progress_bar)
+            self.status_bar.showMessage('Invalid file')
+            return
 
         self.request_headers_dict = {}
         self.request_body_dict = {}
         self.request_cookies_dict = {}
         self.request_queries_dict = {}
-
         self.response_headers_dict = {}
         self.response_body_dict = {}
         self.response_cookies_dict = {}
         
-        # populate the entries table
         for i, entry in enumerate(har['log']['entries']):
 
+            # occasionally update the import progress bar
             if i % 10 == 0:
                 QApplication.processEvents()
                 self.progress_bar.setValue(i / len(har['log']['entries']) * 100)
 
-            id = ''.join(random.choice(string.ascii_lowercase + string.digits) for i in range(5))
+            # unique ID for each request for lookups
+            id = ''.join(random.choice(string.ascii_lowercase) for i in range(8))
             
             row_data = []
             row_data.append(id)
-            row_data.append(entry['startedDateTime'])
-            # drop decimals
-            row_data.append(int(entry['time']))
+            try:
+                row_data.append(entry['startedDateTime'])
+            except KeyError:
+                row_data.append('')
+            try:
+                row_data.append(entry['time'])
+            except KeyError:
+                row_data.append('')
             try:
                 row_data.append(entry['serverIPAddress'])
             except KeyError:
                 row_data.append('')
-            row_data.append(entry['request']['method'])
-            row_data.append(entry['request']['url'])
-            row_data.append(entry['response']['status'])
-            row_data.append(entry['response']['httpVersion'])
-            row_data.append(entry['response']['content']['mimeType'])
-            row_data.append(entry['request']['headersSize'])
-            row_data.append(entry['request']['bodySize'])
-            row_data.append(entry['response']['headersSize'])
-            row_data.append(entry['response']['bodySize'])
-            
-            # fill the requests dictionaries
-            self.request_headers_dict[id] = entry['request']['headers']
             try:
-                self.request_body_dict[id] = entry['request']['postData']
+                row_data.append(entry['request']['method'])
             except KeyError:
-                self.request_body_dict[id] = ''
-            self.request_cookies_dict[id] = entry['request']['cookies']
-            self.request_queries_dict[id] = entry['request']['queryString']
-
-            # fill the response dictionaries
-            self.response_headers_dict[id] = entry['response']['headers']
-            self.response_body_dict[id] = entry['response']['content']
-            self.response_cookies_dict[id] = entry['response']['cookies']
+                row_data.append('')
+            try:                   
+                row_data.append(entry['request']['url'])
+            except KeyError:
+                row_data.append('')
+            try:
+                row_data.append(entry['response']['status'])
+            except KeyError:
+                row_data.append('')
+            try:
+                row_data.append(entry['response']['httpVersion'])
+            except KeyError:
+                row_data.append('')
+            try:
+                row_data.append(entry['response']['content']['mimeType'])
+            except KeyError:
+                row_data.append('')
+            try:
+                row_data.append(entry['request']['headersSize'])
+            except KeyError:
+                row_data.append('')
+            try:                
+                row_data.append(entry['request']['bodySize'])
+            except KeyError:
+                row_data.append('')
+            try:                
+                row_data.append(entry['response']['headersSize'])
+            except KeyError:
+                row_data.append('')
+            try:
+                row_data.append(entry['response']['bodySize'])
+            except KeyError:
+                row_data.append('')                
 
             # populate the entries table
             self.entry_table.insertRow(i)
             for j, item in enumerate(row_data):
                 self.entry_table.setItem(i, j, QTableWidgetItem(str(item)))
             
-        # resize to contents
-        colums_to_resize = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12]
-        for i in colums_to_resize:
-            self.entry_table.resizeColumnToContents(i)
+            # fill the requests dictionaries
+            try:
+                self.request_headers_dict[id] = entry['request']['headers']
+            except KeyError:
+                self.request_headers_dict[id] = ' No request headers found'
+            try:
+                self.request_body_dict[id] = entry['request']['postData']
+            except KeyError:
+                self.request_body_dict[id] = ''
+            try:
+                self.request_cookies_dict[id] = entry['request']['cookies']
+            except KeyError:
+                self.request_cookies_dict[id] = ''
+            try:
+                self.request_queries_dict[id] = entry['request']['queryString']
+            except KeyError:
+                self.request_queries_dict[id] =''
+
+            # fill the response dictionaries
+            try:
+                self.response_headers_dict[id] = entry['response']['headers']
+            except KeyError:
+                self.response_headers_dict[id] = 'No response headers found'
+            try:
+                self.response_body_dict[id] = entry['response']['content']
+            except KeyError:
+                self.response_body_dict[id] = ''
+            try:
+                self.response_cookies_dict[id] = entry['response']['cookies']
+            except:
+                self.response_cookies_dict[id] = ''
+
+        # resize to entries table
+        self.entry_table.resizeColumnsToContents()
+        # overwrite URL column sizing
         self.entry_table.setColumnWidth(5, 800)
         
+        # update the statusbar on success
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
-        self.status_bar.showMessage('Ready')
+        self.status_bar.showMessage('HAR imported sucessfully')
         
     def selectRow(self):
-        # @TODO tidy of exception handling and factor out
-
-        # all rows have been deleted
-        if self.entry_table.currentRow() == -1:
-            self.request_headers_tab_text.setPlainText('')
-            self.request_body_tab_text.setPlainText('')
-            self.request_query_tab_text.setPlainText('')
-            self.request_cookie_tab_text.setPlainText('')
-            self.response_headers_tab_text.setPlainText('')
-            self.response_body_tab_text.setPlainText('')
-            self.response_cookie_tab_text.setPlainText('')
-            return
 
         body_safelist = [
                 'text', 
@@ -398,10 +448,13 @@ class MainApp(QMainWindow):
         self.request_body_tab_text.setPlainText('')
         self.request_query_tab_text.setPlainText('')
         self.request_cookie_tab_text.setPlainText('')
-        
         self.response_headers_tab_text.setPlainText('')
         self.response_body_tab_text.setPlainText('')
         self.response_cookie_tab_text.setPlainText('')
+
+        # all rows have been deleted
+        if self.entry_table.currentRow() == -1:
+            return
 
         row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
         
@@ -409,7 +462,6 @@ class MainApp(QMainWindow):
         request_body = self.request_body_dict[row_id]
         request_cookies = self.request_cookies_dict[row_id]
         request_queries = self.request_queries_dict[row_id]
-        
         response_headers = self.response_headers_dict[row_id]
         response_body = self.response_body_dict[row_id]
         response_cookies = self.response_cookies_dict[row_id]
@@ -459,16 +511,7 @@ class MainApp(QMainWindow):
             entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
             self.response_cookie_tab_text.append(str(entry))
 
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-        # self.request_headers_tab_text.verticalScrollBar().setValue(self.request_headers_tab_text.verticalScrollBar().minimum())
-
     def showOpenDialog(self):
-        self.entry_table.setRowCount
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
         har = file_name[0]
         # parse the HAR file
