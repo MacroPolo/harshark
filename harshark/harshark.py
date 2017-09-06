@@ -503,7 +503,7 @@ class MainApp(QMainWindow):
         for item in response_headers:
 
             # display response headers
-            entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
+            entry = '<b>{}</b><br>{}<br>'.format(item['name'], item['value'])
             self.response_headers_tab_text.append(str(entry))
 
             # parse 'set-cookie header in response header if we don't have them 
