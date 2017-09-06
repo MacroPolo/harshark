@@ -437,6 +437,8 @@ class MainApp(QMainWindow):
         
     def selectRow(self):
 
+        truncate_size = 2000
+
         body_safelist = [
                 'text', 
                 'html',
@@ -447,7 +449,7 @@ class MainApp(QMainWindow):
                 'xml'
         ]
 
-        truncate_size = 2000
+        cookie_list = []
 
         self.request_headers_tab_text.setPlainText('')
         self.request_body_tab_text.setPlainText('')
@@ -482,10 +484,12 @@ class MainApp(QMainWindow):
                     self.request_body_tab_text.insertPlainText(str(entry))
                 except KeyError:
                     self.request_body_tab_text.insertPlainText('No request body found')
+            elif request_body['mimeType'] == '':
+                self.request_body_tab_text.insertPlainText('')
             else:
                 self.request_body_tab_text.insertPlainText('Non ASCII request')  
         else:
-            self.request_body_tab_text.insertPlainText('No request body found')  
+            self.request_body_tab_text.insertPlainText('')  
         
         for item in request_queries:
             entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
@@ -498,6 +502,9 @@ class MainApp(QMainWindow):
         for item in response_headers:
             entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
             self.response_headers_tab_text.append(str(entry))
+
+
+        # parse response body
 
         if response_body != '':
             if any(mime in response_body['mimeType'] for mime in body_safelist):
@@ -512,17 +519,72 @@ class MainApp(QMainWindow):
                 self.response_body_tab_text.insertPlainText('Non ASCII response')
         else:
             self.response_body_tab_text.insertPlainText('No response body found')
-        
-        # @TODO can we get detailed cookie info? expiry time, flags etc
+    
+        # parse response cookies
+
         for item in response_cookies:
-            entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
-            self.response_cookie_tab_text.append(str(entry))
+            
+            cookie = {'name':'',
+                  'value':'',
+                  'path':'',
+                  'domain':'',
+                  'expires':'',
+                  'httpOnly':'',
+                  'secure':'' 
+                  }
+
+            try:
+                cookie['name'] = item['name']
+            except KeyError:
+                pass
+            try:
+                cookie['value'] = item['value']
+            except KeyError:
+                pass
+            try:
+                cookie['path'] = item['path']
+            except KeyError:
+                pass
+            try:
+                cookie['domain'] = item['domain']
+            except KeyError:
+                pass
+            try:
+                cookie['expires'] = item['expires']
+            except KeyError:
+                pass
+            try:
+                cookie['httpOnly'] = item['httpOnly']
+            except KeyError:
+                pass
+            try:
+                cookie['secure'] = item['secure']
+            except KeyError:
+                pass
+
+            cookie_list.append(cookie)
+
+        if response_cookies:
+            for cookie in cookie_list:
+                entry = '''<b>Name</b>: {}<br>
+                            <b>Value</b>: {}<br>
+                            <b>Path</b>: {}<br>
+                            <b>Domain</b>: {}<br>
+                            <b>Expires</b>: {}<br>
+                            <b>httpOnly</b>: {}<br>
+                            <b>Secure</b>: {}<br>'''.format(
+                                cookie['name'], cookie['value'], cookie['path'],
+                                cookie['domain'], cookie['expires'], cookie['httpOnly'],
+                                cookie['secure'])
+
+                self.response_cookie_tab_text.append(entry)
 
     def expandBody(self):
 
         # if all rows have been removed from entries table do nothing
         if self.entry_table.currentRow() == -1:
             return
+
         # get row id
         row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
         # get current body text
@@ -536,7 +598,6 @@ class MainApp(QMainWindow):
             self.response_body_tab_text.insertPlainText(entry)
         
         return
-
 
     def showOpenDialog(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
