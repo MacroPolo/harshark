@@ -499,10 +499,23 @@ class MainApp(QMainWindow):
             entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
             self.request_cookie_tab_text.append(str(entry))
 
+        # parse response headers
         for item in response_headers:
-            entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
+
+            # display response headers
+            entry = '<b>{}</b>: {}'.format(item['name'], item['value'])
             self.response_headers_tab_text.append(str(entry))
 
+            # parse 'set-cookie header in response header if we don't have them 
+            # in nice HAR format
+            if not response_cookies:
+                if item['name'] == 'Set-Cookie' or item['name'] == 'set-cookie':
+                    cookie_header = item['value'].split('\n')
+                    for cookie in cookie_header:
+                        this_cookie = cookie.split(';')
+                        for each in this_cookie:
+                            self.response_cookie_tab_text.append(each.strip())
+                        self.response_cookie_tab_text.append('')
 
         # parse response body
 
@@ -522,49 +535,49 @@ class MainApp(QMainWindow):
     
         # parse response cookies
 
-        for item in response_cookies:
-            
-            cookie = {'name':'',
-                  'value':'',
-                  'path':'',
-                  'domain':'',
-                  'expires':'',
-                  'httpOnly':'',
-                  'secure':'' 
-                  }
-
-            try:
-                cookie['name'] = item['name']
-            except KeyError:
-                pass
-            try:
-                cookie['value'] = item['value']
-            except KeyError:
-                pass
-            try:
-                cookie['path'] = item['path']
-            except KeyError:
-                pass
-            try:
-                cookie['domain'] = item['domain']
-            except KeyError:
-                pass
-            try:
-                cookie['expires'] = item['expires']
-            except KeyError:
-                pass
-            try:
-                cookie['httpOnly'] = item['httpOnly']
-            except KeyError:
-                pass
-            try:
-                cookie['secure'] = item['secure']
-            except KeyError:
-                pass
-
-            cookie_list.append(cookie)
-
         if response_cookies:
+            for item in response_cookies:
+                
+                cookie = {'name':'',
+                    'value':'',
+                    'path':'',
+                    'domain':'',
+                    'expires':'',
+                    'httpOnly':'',
+                    'secure':'' 
+                    }
+
+                try:
+                    cookie['name'] = item['name']
+                except KeyError:
+                    pass
+                try:
+                    cookie['value'] = item['value']
+                except KeyError:
+                    pass
+                try:
+                    cookie['path'] = item['path']
+                except KeyError:
+                    pass
+                try:
+                    cookie['domain'] = item['domain']
+                except KeyError:
+                    pass
+                try:
+                    cookie['expires'] = item['expires']
+                except KeyError:
+                    pass
+                try:
+                    cookie['httpOnly'] = item['httpOnly']
+                except KeyError:
+                    pass
+                try:
+                    cookie['secure'] = item['secure']
+                except KeyError:
+                    pass
+
+                cookie_list.append(cookie)
+
             for cookie in cookie_list:
                 entry = '''<b>Name</b>: {}<br>
                             <b>Value</b>: {}<br>
