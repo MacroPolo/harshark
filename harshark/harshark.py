@@ -60,6 +60,12 @@ class MainApp(QMainWindow):
         delete_act.setShortcut('Delete')
         delete_act.triggered.connect(self.deleteRow)
 
+        #expand
+        expand_act = QAction(QIcon('..\images\expand.png'), 'E&xpand', self)
+        expand_act.setStatusTip('Expand body')
+        expand_act.setShortcut('Ctrl+X')
+        expand_act.triggered.connect(self.expandBody)
+
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
@@ -91,7 +97,8 @@ class MainApp(QMainWindow):
 
         self.toolbar_actions.addAction(open_act)
         self.toolbar_actions.addAction(delete_act)
-
+        self.toolbar_actions.addAction(expand_act)
+        
         searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
         searchbox_lbl.setMargin(5)
@@ -307,10 +314,6 @@ class MainApp(QMainWindow):
         try:
             with open(archive, encoding='utf-8') as har:
                 har = json.load(har)
-        except FileNotFoundError:
-            self.status_bar.removeWidget(self.progress_bar)
-            self.status_bar.showMessage('Ready')
-            return
         except json.decoder.JSONDecodeError:
             self.status_bar.removeWidget(self.progress_bar)
             self.status_bar.showMessage('Invalid file')
@@ -444,6 +447,8 @@ class MainApp(QMainWindow):
                 'xml'
         ]
 
+        truncate_size = 2000
+
         self.request_headers_tab_text.setPlainText('')
         self.request_body_tab_text.setPlainText('')
         self.request_query_tab_text.setPlainText('')
@@ -497,8 +502,10 @@ class MainApp(QMainWindow):
         if response_body != '':
             if any(mime in response_body['mimeType'] for mime in body_safelist):
                 try:
-                    entry = response_body['text']
-                    self.response_body_tab_text.insertPlainText(str(entry))
+                    entry = response_body['text'][:truncate_size]
+                    if len(entry) == truncate_size:
+                        entry = '---BODY TRUNCATED--- (Ctrl+X to expand)\n\n' + str(entry)
+                    self.response_body_tab_text.insertPlainText(entry)
                 except KeyError:
                     self.response_body_tab_text.insertPlainText('No response body found')
             else:
@@ -511,17 +518,40 @@ class MainApp(QMainWindow):
             entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
             self.response_cookie_tab_text.append(str(entry))
 
+    def expandBody(self):
+
+        # if all rows have been removed from entries table do nothing
+        if self.entry_table.currentRow() == -1:
+            return
+        # get row id
+        row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
+        # get current body text
+        body_text = self.response_body_tab_text.toPlainText()
+
+        # show full response body if we know it's been truncated
+        if '---BODY TRUNCATED---' in body_text:
+            response_body = self.response_body_dict[row_id]
+            entry = str(response_body['text'])
+            self.response_body_tab_text.setPlainText('')
+            self.response_body_tab_text.insertPlainText(entry)
+        
+        return
+
+
     def showOpenDialog(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
         har = file_name[0]
+        # no file selected
+        if har == '':
+            return()
         # parse the HAR file
         self.harParse(har)
+
 
 def main():
     app = QApplication(sys.argv)
     app.setFont(QFont('Segoe UI', 10))
     app.setStyle("Fusion")
-  
     main_harshark = MainApp()
     sys.exit(app.exec_())
 
