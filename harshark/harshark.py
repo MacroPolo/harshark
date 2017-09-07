@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtWidgets import QAction
@@ -61,11 +62,22 @@ class MainApp(QMainWindow):
         delete_act.triggered.connect(self.deleteRow)
 
         #expand
-        expand_act = QAction(QIcon('..\images\expand.png'), 'E&xpand', self)
-        expand_act.setStatusTip('Expand body')
+        expand_act = QAction(QIcon('..\images\expand.png'), 'Expand', self)
+        expand_act.setStatusTip('Show full response body content')
         expand_act.setShortcut('Ctrl+X')
         expand_act.triggered.connect(self.expandBody)
 
+        #font choice
+        font_act = QAction('Change &Font', self)
+        font_act.setStatusTip('Change the font used to display request/response information')        
+        font_act.triggered.connect(self.changeFont)
+
+        #resize columns to fit
+        resize_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns', self)
+        resize_act.setStatusTip('Resize all columns to fit')
+        resize_act.setShortcut('Ctrl+R')
+        resize_act.triggered.connect(self.resizeColumns)
+        
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
@@ -85,6 +97,10 @@ class MainApp(QMainWindow):
         file_menu.addAction(open_act)
         file_menu.addAction(exit_act)
 
+        options_menu.addAction(font_act)
+
+        view_menu.addAction(resize_act)
+
         # ---------------------------------------------------------
         # TOOLBAR
         # ---------------------------------------------------------
@@ -98,6 +114,7 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(open_act)
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
+        self.toolbar_actions.addAction(resize_act)
         
         searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
@@ -130,7 +147,7 @@ class MainApp(QMainWindow):
                         'Response Body Size',
                         ]
 
-        self.entry_table = QTableWidget()
+        self.entry_table = QTableWidget()        
         self.entry_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.entry_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.entry_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
@@ -211,12 +228,6 @@ class MainApp(QMainWindow):
         self.response_headers_tab_text = QTextEdit()
         self.response_body_tab_text = QTextEdit()
         self.response_cookie_tab_text = QTextEdit()
-
-        self.response_body_tab_text.setStyleSheet ('''
-            QTextEdit {
-                font: 10pt "Consolas";
-            }
-        ''')
 
         self.response_headers_tab_text.setReadOnly(True)
         self.response_body_tab_text.setReadOnly(True)
@@ -311,6 +322,9 @@ class MainApp(QMainWindow):
 
         # remove any previous entries
         self.entry_table.setRowCount(0)
+
+        # turn off sorting
+        self.entry_table.setSortingEnabled(False)
         
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setMaximumWidth(300)
@@ -432,15 +446,17 @@ class MainApp(QMainWindow):
             except:
                 self.response_cookies_dict[id] = ''
 
-        # resize to entries table
-        self.entry_table.resizeColumnsToContents()
-        # overwrite URL column sizing
-        self.entry_table.setColumnWidth(5, 800)
         
         # update the statusbar on success
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
         self.status_bar.showMessage('HAR imported sucessfully')
+
+        # turn on sorting
+        self.entry_table.setSortingEnabled(True)
+
+        # resize columns to fit
+        self.resizeColumns()
         
     def selectRow(self):
 
@@ -628,11 +644,34 @@ class MainApp(QMainWindow):
         # parse the HAR file
         self.harParse(har)
 
+    def changeFont(self):
+        font, valid = QFontDialog.getFont()
+        if valid:
+            self.entry_table.setFont(font)         
+            self.request_headers_tab_text.setFont(font)
+            self.request_body_tab_text.setFont(font)
+            self.request_query_tab_text.setFont(font)
+            self.request_cookie_tab_text.setFont(font)
+            self.response_headers_tab_text.setFont(font)
+            self.response_body_tab_text.setFont(font)
+            self.response_cookie_tab_text.setFont(font)
+
+    def resizeColumns(self):
+        self.entry_table.resizeColumnsToContents()
+        # overwrite URL column sizing
+        self.entry_table.setColumnWidth(5, 800)
+
 
 def main():
+    stylesheet = """
+        QTextEdit {
+            font: 10pt "Consolas";
+        }
+    """
     app = QApplication(sys.argv)
     app.setFont(QFont('Segoe UI', 10))
     app.setStyle("Fusion")
+    # app.setStyleSheet(stylesheet)
     main_harshark = MainApp()
     sys.exit(app.exec_())
 
