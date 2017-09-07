@@ -131,6 +131,7 @@ class MainApp(QMainWindow):
                         ]
 
         self.entry_table = QTableWidget()
+        self.entry_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.entry_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.entry_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.entry_table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
@@ -210,6 +211,12 @@ class MainApp(QMainWindow):
         self.response_headers_tab_text = QTextEdit()
         self.response_body_tab_text = QTextEdit()
         self.response_cookie_tab_text = QTextEdit()
+
+        self.response_body_tab_text.setStyleSheet ('''
+            QTextEdit {
+                font: 10pt "Consolas";
+            }
+        ''')
 
         self.response_headers_tab_text.setReadOnly(True)
         self.response_body_tab_text.setReadOnly(True)
@@ -591,7 +598,7 @@ class MainApp(QMainWindow):
                                 cookie['secure'])
 
                 self.response_cookie_tab_text.append(entry)
-
+                
     def expandBody(self):
 
         # if all rows have been removed from entries table do nothing
