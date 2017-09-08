@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QTextOption
 from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAbstractScrollArea
@@ -77,6 +78,12 @@ class MainApp(QMainWindow):
         resize_act.setStatusTip('Resize all columns to fit')
         resize_act.setShortcut('Ctrl+R')
         resize_act.triggered.connect(self.resizeColumns)
+
+        #toggle wordwrap
+        wordwrap_act = QAction('&Toogle &word wrap', self)
+        wordwrap_act.setStatusTip('Toggle word wrap')
+        wordwrap_act.setShortcut('Ctrl+W')
+        wordwrap_act.triggered.connect(self.toggleWordWrap)
         
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
@@ -98,7 +105,8 @@ class MainApp(QMainWindow):
         file_menu.addAction(exit_act)
 
         options_menu.addAction(font_act)
-
+        options_menu.addAction(wordwrap_act)
+        
         view_menu.addAction(resize_act)
 
         # ---------------------------------------------------------
@@ -192,7 +200,7 @@ class MainApp(QMainWindow):
         self.request_headers_tab_text.setUndoRedoEnabled(False)
         self.request_body_tab_text.setUndoRedoEnabled(False)
         self.request_query_tab_text.setUndoRedoEnabled(False)
-        self.request_cookie_tab_text.setUndoRedoEnabled(False)    
+        self.request_cookie_tab_text.setUndoRedoEnabled(False)
          
         request_headers_tab_layout = QVBoxLayout()
         request_body_tab_layout = QVBoxLayout()
@@ -670,6 +678,26 @@ class MainApp(QMainWindow):
         # overwrite URL column sizing
         self.entry_table.setColumnWidth(5, 800)
 
+    def toggleWordWrap(self):
+
+        wr_mode = self.request_headers_tab_text.wordWrapMode()
+
+        if wr_mode == 4:
+            self.request_headers_tab_text.setWordWrapMode(QTextOption.NoWrap)
+            self.request_body_tab_text.setWordWrapMode(QTextOption.NoWrap)
+            self.request_query_tab_text.setWordWrapMode(QTextOption.NoWrap)
+            self.request_cookie_tab_text.setWordWrapMode(QTextOption.NoWrap)
+            self.response_headers_tab_text.setWordWrapMode(QTextOption.NoWrap)
+            self.response_body_tab_text.setWordWrapMode(QTextOption.NoWrap)
+            self.response_cookie_tab_text.setWordWrapMode(QTextOption.NoWrap)
+        else:
+            self.request_headers_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            self.request_body_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            self.request_query_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            self.request_cookie_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            self.response_headers_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            self.response_body_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            self.response_cookie_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
 
 def main():
     stylesheet = """
