@@ -258,11 +258,20 @@ class MainApp(QMainWindow):
         # GROUPBOX
         # ---------------------------------------------------------
 
+    
         request_vbox = QVBoxLayout()
         response_vbox = QVBoxLayout()
 
+        request_searchbox = QLineEdit(self)
+        response_searchbox = QLineEdit(self)        
+        request_searchbox.setPlaceholderText('Enter search query here to highlight matches')
+        response_searchbox.setPlaceholderText('Enter search query here to highlight matches')
+
         request_vbox.addWidget(request_tabs)
+        request_vbox.addWidget(request_searchbox)
+
         response_vbox.addWidget(response_tabs)
+        response_vbox.addWidget(response_searchbox)        
 
         request_group_box = QGroupBox(title='Requests')
         request_group_box.setLayout(request_vbox)
