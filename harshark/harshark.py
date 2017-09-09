@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QActionGroup
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QComboBox
@@ -44,6 +45,7 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.style_option = 1
         self.initUI()
         
     def initUI(self):
@@ -59,24 +61,24 @@ class MainApp(QMainWindow):
         open_act.triggered.connect(self.openFile)
         
         #delete
-        delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
+        delete_act = QAction(QIcon('..\images\delete.png'), '&Delete Entry', self)
         delete_act.setStatusTip('Delete the selected requests')
         delete_act.setShortcut('Delete')
         delete_act.triggered.connect(self.deleteRow)
 
         #expand
-        expand_act = QAction(QIcon('..\images\expand.png'), 'Expand', self)
+        expand_act = QAction(QIcon('..\images\expand.png'), 'Expand Response Body', self)
         expand_act.setStatusTip('Show full response body content')
         expand_act.setShortcut('Ctrl+X')
         expand_act.triggered.connect(self.expandBody)
 
         #font choice
-        font_act = QAction(QIcon('..\images\\font.png'), 'Change &Font...', self)
+        font_act = QAction(QIcon('..\images\\font.png'), 'Select &Font...', self)
         font_act.setStatusTip('Change the font used to display request/response information')        
         font_act.triggered.connect(self.changeFont)
 
         #resize columns to fit
-        resize_col_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns', self)
+        resize_col_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns to Fit', self)
         resize_col_act.setStatusTip('Resize all columns to fit')
         resize_col_act.setShortcut('Ctrl+R')
         resize_col_act.triggered.connect(self.resizeColumns)
@@ -88,6 +90,22 @@ class MainApp(QMainWindow):
         wordwrap_act.setStatusTip('Toggle word wrap')
         wordwrap_act.setShortcut('Ctrl+W')
         wordwrap_act.triggered.connect(self.toggleWordWrap)
+
+        # select data style
+        data_style_inline_act = QAction(QIcon('..\images\inline.png'), 'Compact Style', 
+                                        self, checkable=True)
+        data_style_newline_act = QAction(QIcon('..\images\\newline.png'), 'Spaced Style', 
+                                         self, checkable=True)
+        data_style_inline_act.setShortcut('Ctrl+I')
+        data_style_newline_act.setShortcut('Ctrl+N')
+        data_style_inline_act.setChecked(True)
+        
+        data_style_inline_act.triggered.connect(self.setInlineStyle)
+        data_style_newline_act.triggered.connect(self.setNewlineStyle)
+        
+        data_style_group = QActionGroup(self, exclusive=True)
+        data_style_group.addAction(data_style_inline_act)
+        data_style_group.addAction(data_style_newline_act)
         
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
@@ -109,11 +127,13 @@ class MainApp(QMainWindow):
         file_menu.addAction(exit_act)
 
         options_menu.addAction(font_act)
+        options_menu.addAction(data_style_inline_act)
+        options_menu.addAction(data_style_newline_act)
 
         view_menu.addAction(resize_col_act)
         view_menu.addAction(wordwrap_act)
-        
-        
+        view_menu.addSeparator()
+
         # ---------------------------------------------------------
         # TOOLBARS
         # ---------------------------------------------------------
@@ -160,7 +180,7 @@ class MainApp(QMainWindow):
                         'Response Body Size',
                         ]
 
-        self.entry_table = QTableWidget()        
+        self.entry_table = QTableWidget()
         self.entry_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.entry_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.entry_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
@@ -168,6 +188,8 @@ class MainApp(QMainWindow):
         self.entry_table.setColumnCount(len(header_labels))
         self.entry_table.setHorizontalHeaderLabels(header_labels)
         self.entry_table.hideColumn(0)
+        self.entry_table.setFont(QFont('Segoe UI', 10))
+
         # when row clicked, fetch the request/response
         self.entry_table.itemSelectionChanged.connect(self.selectRow)
 
@@ -311,32 +333,26 @@ class MainApp(QMainWindow):
         
         self.showMaximized()
         # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.2')
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.3')
         # app icon
         self.setWindowIcon(QIcon('..\images\logo2.png'))
         # display the app
         self.show()
 
-    def deleteRow(self):
-        """delete the selected rows from the requests table when hitting the 
-        'delete' key
-        """
-        all_selection_groups = self.entry_table.selectedRanges()
-        # count number of row selection groups
-        number_of_selection_groups = len(all_selection_groups)
-        # for each row selection group
-        for i in range(number_of_selection_groups, 0, -1):
-            # index into this row selection group
-            selRange  = all_selection_groups[number_of_selection_groups - 1]
-            # get first row for this selection
-            fist_row = selRange.topRow()
-            # get last row for this selection
-            last_row = selRange.bottomRow()
-            # delete from first to last row in this selection        
-            for j in range(last_row, fist_row - 1, -1):
-                self.entry_table.removeRow(j)
-            # decrement, to move to next row selection group
-            number_of_selection_groups -= 1
+
+    def harCheck(self):
+        try:
+            foo = self.har['log']['entries']
+        except:
+            print('HAR file does not contain any entries')
+            self.status_bar.removeWidget(self.progress_bar)
+            self.status_bar.showMessage('HAR file contains no entries!')
+            return(-1)
+        if len(foo) < 1:
+            self.status_bar.removeWidget(self.progress_bar)
+            self.status_bar.showMessage('HAR file contains no entries!')
+            return(-1)
+
 
     def harParse(self):
 
@@ -494,9 +510,14 @@ class MainApp(QMainWindow):
 
                 # if this column is a numeric column, sort numerically
                 if j in numeric_columns:
-                    item = TableWidgetItem(str(item), item)
-                    self.entry_table.setItem(i, j, item)
-                # otherwise business as usual
+                    # truncate any decimal 
+                    if j == 2:
+                        item = TableWidgetItem(str(int(item)), item)
+                        self.entry_table.setItem(i, j, item)
+                    else:
+                        item = TableWidgetItem(str(item), item)
+                        self.entry_table.setItem(i, j, item)
+                # if not, sort alphabetically
                 else:
                     self.entry_table.setItem(i, j, QTableWidgetItem(str(item)))
             
@@ -504,7 +525,7 @@ class MainApp(QMainWindow):
             try:
                 self.request_headers_dict[id] = entry['request']['headers']
             except KeyError:
-                self.request_headers_dict[id] = ' No request headers found'
+                self.request_headers_dict[id] = ''
             try:
                 self.request_body_dict[id] = entry['request']['postData']
             except KeyError:
@@ -516,13 +537,13 @@ class MainApp(QMainWindow):
             try:
                 self.request_queries_dict[id] = entry['request']['queryString']
             except KeyError:
-                self.request_queries_dict[id] =''
+                self.request_queries_dict[id] = ''
 
             # fill the response dictionaries
             try:
                 self.response_headers_dict[id] = entry['response']['headers']
             except KeyError:
-                self.response_headers_dict[id] = 'No response headers found'
+                self.response_headers_dict[id] = ''
             try:
                 self.response_body_dict[id] = entry['response']['content']
             except KeyError:
@@ -532,7 +553,6 @@ class MainApp(QMainWindow):
             except:
                 self.response_cookies_dict[id] = ''
 
-        
         # update the statusbar on success
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
@@ -544,25 +564,39 @@ class MainApp(QMainWindow):
         # resize columns to fit
         self.resizeColumns()
 
-        self.entry_table.setFont(QFont('Segoe UI', 10))
 
-    def harCheck(self):
-        try:
-            foo = self.har['log']['entries']
-        except:
-            print('HAR file does not contain any entries')
-            self.status_bar.removeWidget(self.progress_bar)
-            self.status_bar.showMessage('HAR file contains no entries!')
-            return(-1)
-        if len(foo) < 1:
-            self.status_bar.removeWidget(self.progress_bar)
-            self.status_bar.showMessage('HAR file contains no entries!')
-            return(-1)
+    def deleteRow(self):
+        """delete the selected rows from the requests table when hitting the 
+        'delete' key
+        """
+        all_selection_groups = self.entry_table.selectedRanges()
+        # count number of row selection groups
+        number_of_selection_groups = len(all_selection_groups)
+        # for each row selection group
+        for i in range(number_of_selection_groups, 0, -1):
+            # index into this row selection group
+            selRange  = all_selection_groups[number_of_selection_groups - 1]
+            # get first row for this selection
+            fist_row = selRange.topRow()
+            # get last row for this selection
+            last_row = selRange.bottomRow()
+            # delete from first to last row in this selection        
+            for j in range(last_row, fist_row - 1, -1):
+                self.entry_table.removeRow(j)
+            # decrement, to move to next row selection group
+            number_of_selection_groups -= 1
         
+
     def selectRow(self):
 
+        # catch when all rows have been deleted
+        if self.entry_table.currentRow() == -1:
+            return
+
+        # number of characters to truncate large response bodies to
         truncate_size = 2000
 
+        # response body mime-types which will be displayed
         body_safelist = [
                 'text', 
                 'html',
@@ -573,8 +607,14 @@ class MainApp(QMainWindow):
                 'xml'
         ]
 
+        # cookie store
         cookie_list = []
 
+        # newline name value style
+        data_styles = ['<b>{}</b><br>{}<br>', '<b>{}</b>: {}']
+        active_style = data_styles[self.style_option]
+
+        # clear old data from the text boxes
         self.request_headers_tab_text.setPlainText('')
         self.request_body_tab_text.setPlainText('')
         self.request_query_tab_text.setPlainText('')
@@ -583,12 +623,10 @@ class MainApp(QMainWindow):
         self.response_body_tab_text.setPlainText('')
         self.response_cookie_tab_text.setPlainText('')
 
-        # all rows have been deleted
-        if self.entry_table.currentRow() == -1:
-            return
-
+        # get UID from the active row
         row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
         
+        # retrieve the data for this UID
         request_headers = self.request_headers_dict[row_id]
         request_body = self.request_body_dict[row_id]
         request_cookies = self.request_cookies_dict[row_id]
@@ -597,8 +635,10 @@ class MainApp(QMainWindow):
         response_body = self.response_body_dict[row_id]
         response_cookies = self.response_cookies_dict[row_id]
 
+        # request headers tab
+        
         for item in request_headers:
-            entry = '<p><b>{}</b><br>{}'.format(item['name'], item['value'])
+            entry = active_style.format(item['name'], item['value'])
             self.request_headers_tab_text.append(str(entry))
 
         if request_body != '':
@@ -616,18 +656,18 @@ class MainApp(QMainWindow):
             self.request_body_tab_text.insertPlainText('')  
         
         for item in request_queries:
-            entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
+            entry = active_style.format(item['name'], item['value'])
             self.request_query_tab_text.append(str(entry))
         
         for item in request_cookies:
-            entry = '<p>     <b>{}</b><br>{}'.format(item['name'], item['value'])
+            entry = active_style.format(item['name'], item['value'])
             self.request_cookie_tab_text.append(str(entry))
 
         # parse response headers
         for item in response_headers:
 
             # display response headers
-            entry = '<b>{}</b><br>{}<br>'.format(item['name'], item['value'])
+            entry = active_style.format(item['name'], item['value'])
             self.response_headers_tab_text.append(str(entry))
 
             # parse 'set-cookie header in response header if we don't have them 
@@ -718,6 +758,7 @@ class MainApp(QMainWindow):
         
         self.scrollTextEdit()
 
+
     def scrollTextEdit(self):
         self.request_headers_tab_text.moveCursor(QTextCursor.Start)
         self.request_body_tab_text.moveCursor(QTextCursor.Start)
@@ -748,6 +789,7 @@ class MainApp(QMainWindow):
         
         return
 
+
     def openFile(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
         file_name = file_name[0]
@@ -766,6 +808,7 @@ class MainApp(QMainWindow):
                 self.status_bar.showMessage('Invalid file')
                 return()
 
+
     def changeFont(self):
         font, valid = QFontDialog.getFont()
         if valid:
@@ -778,10 +821,20 @@ class MainApp(QMainWindow):
             self.response_body_tab_text.setFont(font)
             self.response_cookie_tab_text.setFont(font)
 
+    
+    def setInlineStyle(self):
+        self.style_option = 1
+
+
+    def setNewlineStyle(self):
+        self.style_option = 0
+
+
     def resizeColumns(self):
         self.entry_table.resizeColumnsToContents()
         # overwrite URL column sizing
         self.entry_table.setColumnWidth(5, 800)
+
 
     def toggleWordWrap(self):
 
