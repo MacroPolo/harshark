@@ -37,6 +37,7 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QSpinBox
 
 
 class MainApp(QMainWindow):
@@ -75,10 +76,10 @@ class MainApp(QMainWindow):
         font_act.triggered.connect(self.changeFont)
 
         #resize columns to fit
-        resize_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns', self)
-        resize_act.setStatusTip('Resize all columns to fit')
-        resize_act.setShortcut('Ctrl+R')
-        resize_act.triggered.connect(self.resizeColumns)
+        resize_col_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns', self)
+        resize_col_act.setStatusTip('Resize all columns to fit')
+        resize_col_act.setShortcut('Ctrl+R')
+        resize_col_act.triggered.connect(self.resizeColumns)
 
         #toggle wordwrap
         wordwrap_act = QAction(QIcon('..\images\\wrap.png'), '&Toogle Word Wrap', 
@@ -109,9 +110,9 @@ class MainApp(QMainWindow):
 
         options_menu.addAction(font_act)
         options_menu.addAction(wordwrap_act)
-        
-        view_menu.addAction(resize_act)
 
+        view_menu.addAction(resize_col_act)
+        
         # ---------------------------------------------------------
         # TOOLBARS
         # ---------------------------------------------------------
@@ -125,7 +126,7 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(open_act)
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
-        self.toolbar_actions.addAction(resize_act)
+        self.toolbar_actions.addAction(resize_col_act)
         
         searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
@@ -385,51 +386,55 @@ class MainApp(QMainWindow):
             except KeyError:
                 row_data.append('')
             try:
-                row_data.append(str(int(entry['time'])))
+                if entry['time'] == None:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['time'])
             except KeyError:
-                row_data.append('')
-            except TypeError:
-                row_data.append('')
+                row_data.append(-1)
             try:
                 row_data.append(entry['serverIPAddress'])
             except KeyError:
-                row_data.append('')
+                row_data.append(-1)
             try:
                 row_data.append(entry['request']['method'])
             except KeyError:
-                row_data.append('')
+                row_data.append('-')
             try:                   
                 row_data.append(entry['request']['url'])
             except KeyError:
-                row_data.append('')
+                row_data.append('-')
             try:
                 row_data.append(entry['response']['status'])
             except KeyError:
-                row_data.append('')
+                row_data.append(-1)
             try:
-                row_data.append(entry['response']['httpVersion'])
+                if entry['response']['httpVersion'] == '':
+                    row_data.append('-')
+                else:
+                    row_data.append(entry['response']['httpVersion'])
             except KeyError:
-                row_data.append('')
+                row_data.append('-')
             try:
                 row_data.append(entry['response']['content']['mimeType'])
             except KeyError:
-                row_data.append('')
+                row_data.append('-')
             try:
                 row_data.append(entry['request']['headersSize'])
             except KeyError:
-                row_data.append('')
+                row_data.append(-1)
             try:                
                 row_data.append(entry['request']['bodySize'])
             except KeyError:
-                row_data.append('')
+                row_data.append(-1)
             try:                
                 row_data.append(entry['response']['headersSize'])
             except KeyError:
-                row_data.append('')
+                row_data.append(-1)
             try:
                 row_data.append(entry['response']['bodySize'])
             except KeyError:
-                row_data.append('')                
+                row_data.append(-1)
 
             # populate the entries table
             self.entry_table.insertRow(i)
@@ -440,6 +445,7 @@ class MainApp(QMainWindow):
                 if j in numeric_columns:
                     item = TableWidgetItem(str(item), item)
                     self.entry_table.setItem(i, j, item)
+                # otherwise business as usual
                 else:
                     self.entry_table.setItem(i, j, QTableWidgetItem(str(item)))
             
@@ -486,6 +492,8 @@ class MainApp(QMainWindow):
 
         # resize columns to fit
         self.resizeColumns()
+
+        self.entry_table.setFont(QFont('Segoe UI', 10))
         
     def selectRow(self):
 
@@ -726,11 +734,14 @@ class MainApp(QMainWindow):
 
 class TableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
-            QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
-            self.sortKey = sortKey
+        QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
+        self.sortKey = sortKey
 
     def __lt__(self, other):
-            return self.sortKey < other.sortKey 
+        try:
+            return self.sortKey < other.sortKey
+        except TypeError:
+            return -1
 
 def main():
     app = QApplication(sys.argv)
