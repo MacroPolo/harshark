@@ -56,7 +56,7 @@ class MainApp(QMainWindow):
         open_act = QAction(QIcon('..\images\open.png'), '&Open', self)
         open_act.setShortcut('Ctrl+O')
         open_act.setStatusTip('Open a new HAR file')
-        open_act.triggered.connect(self.showOpenDialog)
+        open_act.triggered.connect(self.openFile)
         
         #delete
         delete_act = QAction(QIcon('..\images\delete.png'), '&Delete', self)
@@ -109,9 +109,10 @@ class MainApp(QMainWindow):
         file_menu.addAction(exit_act)
 
         options_menu.addAction(font_act)
-        options_menu.addAction(wordwrap_act)
 
         view_menu.addAction(resize_col_act)
+        view_menu.addAction(wordwrap_act)
+        
         
         # ---------------------------------------------------------
         # TOOLBARS
@@ -337,28 +338,9 @@ class MainApp(QMainWindow):
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
 
-    def harParse(self, archive):
+    def harParse(self):
 
-        # remove any previous entries
-        self.entry_table.setRowCount(0)
-
-        # turn off sorting
-        self.entry_table.setSortingEnabled(False)
-        
-        self.progress_bar = QProgressBar(self)
-        self.progress_bar.setMaximumWidth(300)
-        self.progress_bar.setMaximumHeight(17)
-        self.status_bar.clearMessage()
-        self.status_bar.addWidget(self.progress_bar)
-
-        try:
-            with open(archive, encoding='utf-8') as har:
-                har = json.load(har)
-        except json.decoder.JSONDecodeError:
-            self.status_bar.removeWidget(self.progress_bar)
-            self.status_bar.showMessage('Invalid file')
-            return
-
+        # initalise dictionaries used to store entry details
         self.request_headers_dict = {}
         self.request_body_dict = {}
         self.request_cookies_dict = {}
@@ -367,72 +349,141 @@ class MainApp(QMainWindow):
         self.response_body_dict = {}
         self.response_cookies_dict = {}
 
+        # columns which should be sorted as numbers rather than strings
         numeric_columns = [2, 3, 6, 9, 10, 11, 12]
+
+        # HAR file none types
+        none_types = [None, '']
+
+        # remove any previous rows which may exist from a previous file
+        self.entry_table.setRowCount(0)
+
+        # turn off sorting
+        self.entry_table.setSortingEnabled(False)
         
-        for i, entry in enumerate(har['log']['entries']):
+        # initialise progress bar
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setMaximumWidth(300)
+        self.progress_bar.setMaximumHeight(17)
+
+        # update status bar
+        self.status_bar.clearMessage()
+        self.status_bar.addWidget(self.progress_bar)
+
+        # make sure we have some entries in the HAR
+        har_status = self.harCheck()
+        if har_status == -1:
+            return()
+   
+        # for each entry in the HAR file
+        for i, entry in enumerate(self.har['log']['entries']):
 
             # occasionally update the import progress bar
             if i % 10 == 0:
                 QApplication.processEvents()
-                self.progress_bar.setValue(i / len(har['log']['entries']) * 100)
+                self.progress_bar.setValue(i / len(self.har['log']['entries']) * 100)
 
-            # unique ID for each request for lookups
-            id = ''.join(random.choice(string.ascii_lowercase) for i in range(8))
+            # create UID for each request
+            id = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
             
+            # create list of this rows data
             row_data = []
+
             row_data.append(id)
+
             try:
-                row_data.append(entry['startedDateTime'])
+                if entry['startedDateTime'] in none_types:
+                    row_data.append('-')
+                else:
+                    row_data.append(entry['startedDateTime'])
             except KeyError:
-                row_data.append('')
+                row_data.append('-')
+            
             try:
-                if entry['time'] == None:
+                if entry['time'] in none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['time'])
             except KeyError:
                 row_data.append(-1)
+            
             try:
-                row_data.append(entry['serverIPAddress'])
+                if entry['serverIPAddress'] in none_types:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['serverIPAddress'])
             except KeyError:
                 row_data.append(-1)
+            
             try:
-                row_data.append(entry['request']['method'])
+                if entry['request']['method'] in none_types:
+                    row_data.append('-')
+                else:
+                    row_data.append(entry['request']['method'])
             except KeyError:
                 row_data.append('-')
-            try:                   
-                row_data.append(entry['request']['url'])
+            
+            try:
+                if entry['request']['url'] in none_types:
+                    row_data.append('-')
+                else:
+                    row_data.append(entry['request']['url'])
             except KeyError:
                 row_data.append('-')
+            
             try:
-                row_data.append(entry['response']['status'])
+                if entry['response']['status'] in none_types:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['response']['status'])
             except KeyError:
                 row_data.append(-1)
+            
             try:
-                if entry['response']['httpVersion'] == '':
+                if entry['response']['httpVersion'] in none_types:
                     row_data.append('-')
                 else:
                     row_data.append(entry['response']['httpVersion'])
             except KeyError:
                 row_data.append('-')
+            
             try:
-                row_data.append(entry['response']['content']['mimeType'])
+                if entry['response']['content']['mimeType'] in none_types:
+                    row_data.append('-')
+                else:
+                    row_data.append(entry['response']['content']['mimeType'])
             except KeyError:
                 row_data.append('-')
+            
             try:
-                row_data.append(entry['request']['headersSize'])
+                if entry['request']['headersSize'] in none_types:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['request']['headersSize'])
             except KeyError:
                 row_data.append(-1)
-            try:                
-                row_data.append(entry['request']['bodySize'])
-            except KeyError:
-                row_data.append(-1)
-            try:                
-                row_data.append(entry['response']['headersSize'])
-            except KeyError:
-                row_data.append(-1)
+            
             try:
-                row_data.append(entry['response']['bodySize'])
+                if entry['request']['bodySize'] in none_types:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['request']['bodySize'])
+            except KeyError:
+                row_data.append(-1)
+            
+            try:
+                if entry['response']['headersSize'] in none_types:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['response']['headersSize'])
+            except KeyError:
+                row_data.append(-1)
+            
+            try:
+                if entry['response']['bodySize'] in none_types:
+                    row_data.append(-1)
+                else:
+                    row_data.append(entry['response']['bodySize'])
             except KeyError:
                 row_data.append(-1)
 
@@ -441,7 +492,7 @@ class MainApp(QMainWindow):
 
             for j, item in enumerate(row_data):
 
-                # handle numeric sorting
+                # if this column is a numeric column, sort numerically
                 if j in numeric_columns:
                     item = TableWidgetItem(str(item), item)
                     self.entry_table.setItem(i, j, item)
@@ -494,6 +545,19 @@ class MainApp(QMainWindow):
         self.resizeColumns()
 
         self.entry_table.setFont(QFont('Segoe UI', 10))
+
+    def harCheck(self):
+        try:
+            foo = self.har['log']['entries']
+        except:
+            print('HAR file does not contain any entries')
+            self.status_bar.removeWidget(self.progress_bar)
+            self.status_bar.showMessage('HAR file contains no entries!')
+            return(-1)
+        if len(foo) < 1:
+            self.status_bar.removeWidget(self.progress_bar)
+            self.status_bar.showMessage('HAR file contains no entries!')
+            return(-1)
         
     def selectRow(self):
 
@@ -684,14 +748,23 @@ class MainApp(QMainWindow):
         
         return
 
-    def showOpenDialog(self):
+    def openFile(self):
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
-        har = file_name[0]
+        file_name = file_name[0]
+        
         # no file selected
-        if har == '':
+        if file_name == '':
             return()
-        # parse the HAR file
-        self.harParse(har)
+        else:
+        # load the HAR file
+            try:
+                with open(file_name, encoding='utf-8') as har:
+                    self.har = json.load(har)
+                    self.harParse()
+            except json.decoder.JSONDecodeError:
+                self.status_bar.removeWidget(self.progress_bar)
+                self.status_bar.showMessage('Invalid file')
+                return()
 
     def changeFont(self):
         font, valid = QFontDialog.getFont()
