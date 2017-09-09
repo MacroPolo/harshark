@@ -340,6 +340,25 @@ class MainApp(QMainWindow):
         self.show()
 
 
+    def openFile(self):
+        file_name = QFileDialog.getOpenFileName(self, 'Open file')
+        file_name = file_name[0]
+        
+        # no file selected
+        if file_name == '':
+            return()
+        else:
+        # load the HAR file
+            try:
+                with open(file_name, encoding='utf-8') as har:
+                    self.har = json.load(har)
+                    self.harParse()
+            except json.decoder.JSONDecodeError:
+                self.status_bar.removeWidget(self.progress_bar)
+                self.status_bar.showMessage('Invalid file')
+                return()
+
+
     def harCheck(self):
         try:
             foo = self.har['log']['entries']
@@ -365,11 +384,14 @@ class MainApp(QMainWindow):
         self.response_body_dict = {}
         self.response_cookies_dict = {}
 
+        # clear any old entries from textboxes
+        self.clearTextEdit()
+
         # columns which should be sorted as numbers rather than strings
         numeric_columns = [2, 3, 6, 9, 10, 11, 12]
 
         # HAR file none types
-        none_types = [None, '']
+        self.none_types = [None, '']
 
         # remove any previous rows which may exist from a previous file
         self.entry_table.setRowCount(0)
@@ -408,7 +430,7 @@ class MainApp(QMainWindow):
             row_data.append(id)
 
             try:
-                if entry['startedDateTime'] in none_types:
+                if entry['startedDateTime'] in self.none_types:
                     row_data.append('-')
                 else:
                     row_data.append(entry['startedDateTime'])
@@ -416,7 +438,7 @@ class MainApp(QMainWindow):
                 row_data.append('-')
             
             try:
-                if entry['time'] in none_types:
+                if entry['time'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['time'])
@@ -424,7 +446,7 @@ class MainApp(QMainWindow):
                 row_data.append(-1)
             
             try:
-                if entry['serverIPAddress'] in none_types:
+                if entry['serverIPAddress'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['serverIPAddress'])
@@ -432,7 +454,7 @@ class MainApp(QMainWindow):
                 row_data.append(-1)
             
             try:
-                if entry['request']['method'] in none_types:
+                if entry['request']['method'] in self.none_types:
                     row_data.append('-')
                 else:
                     row_data.append(entry['request']['method'])
@@ -440,7 +462,7 @@ class MainApp(QMainWindow):
                 row_data.append('-')
             
             try:
-                if entry['request']['url'] in none_types:
+                if entry['request']['url'] in self.none_types:
                     row_data.append('-')
                 else:
                     row_data.append(entry['request']['url'])
@@ -448,7 +470,7 @@ class MainApp(QMainWindow):
                 row_data.append('-')
             
             try:
-                if entry['response']['status'] in none_types:
+                if entry['response']['status'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['response']['status'])
@@ -456,7 +478,7 @@ class MainApp(QMainWindow):
                 row_data.append(-1)
             
             try:
-                if entry['response']['httpVersion'] in none_types:
+                if entry['response']['httpVersion'] in self.none_types:
                     row_data.append('-')
                 else:
                     row_data.append(entry['response']['httpVersion'])
@@ -464,7 +486,7 @@ class MainApp(QMainWindow):
                 row_data.append('-')
             
             try:
-                if entry['response']['content']['mimeType'] in none_types:
+                if entry['response']['content']['mimeType'] in self.none_types:
                     row_data.append('-')
                 else:
                     row_data.append(entry['response']['content']['mimeType'])
@@ -472,7 +494,7 @@ class MainApp(QMainWindow):
                 row_data.append('-')
             
             try:
-                if entry['request']['headersSize'] in none_types:
+                if entry['request']['headersSize'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['request']['headersSize'])
@@ -480,7 +502,7 @@ class MainApp(QMainWindow):
                 row_data.append(-1)
             
             try:
-                if entry['request']['bodySize'] in none_types:
+                if entry['request']['bodySize'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['request']['bodySize'])
@@ -488,7 +510,7 @@ class MainApp(QMainWindow):
                 row_data.append(-1)
             
             try:
-                if entry['response']['headersSize'] in none_types:
+                if entry['response']['headersSize'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['response']['headersSize'])
@@ -496,7 +518,7 @@ class MainApp(QMainWindow):
                 row_data.append(-1)
             
             try:
-                if entry['response']['bodySize'] in none_types:
+                if entry['response']['bodySize'] in self.none_types:
                     row_data.append(-1)
                 else:
                     row_data.append(entry['response']['bodySize'])
@@ -615,13 +637,7 @@ class MainApp(QMainWindow):
         active_style = data_styles[self.style_option]
 
         # clear old data from the text boxes
-        self.request_headers_tab_text.setPlainText('')
-        self.request_body_tab_text.setPlainText('')
-        self.request_query_tab_text.setPlainText('')
-        self.request_cookie_tab_text.setPlainText('')
-        self.response_headers_tab_text.setPlainText('')
-        self.response_body_tab_text.setPlainText('')
-        self.response_cookie_tab_text.setPlainText('')
+        self.clearTextEdit()
 
         # get UID from the active row
         row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
@@ -636,73 +652,85 @@ class MainApp(QMainWindow):
         response_cookies = self.response_cookies_dict[row_id]
 
         # request headers tab
-        
         for item in request_headers:
             entry = active_style.format(item['name'], item['value'])
-            self.request_headers_tab_text.append(str(entry))
+            self.request_headers_tab_text.append(entry)
 
-        if request_body != '':
+            # parse the 'cookie' header in request header if they haven't 
+            # been split out into the 'cookies' key in the HAR file
+            if not request_cookies:
+                if item['name'] == 'Cookie' or item['name'] == 'cookie':
+                    cookie_header = item['value'].split(';')
+                    for cookie in cookie_header:
+                        self.request_cookie_tab_text.append(cookie.strip())
+                        self.request_cookie_tab_text.append('')
+
+        # request body tab
+        if request_body not in self.none_types:
             if any(mime in request_body['mimeType'] for mime in body_safelist):
                 try:
-                    entry = request_body['text']
+                    entry = request_body['text'][:truncate_size]
+                    if len(entry) == truncate_size:
+                        entry = '[Request body truncated. Use Ctrl+X to expand.]\n\n' + str(entry)
                     self.request_body_tab_text.insertPlainText(str(entry))
                 except KeyError:
-                    self.request_body_tab_text.insertPlainText('No request body found')
-            elif request_body['mimeType'] == '':
+                    self.request_body_tab_text.insertPlainText('')
+            elif request_body['mimeType'] in self.none_types:
                 self.request_body_tab_text.insertPlainText('')
             else:
-                self.request_body_tab_text.insertPlainText('Non ASCII request')  
+                self.request_body_tab_text.insertPlainText('[Non text data]')  
         else:
             self.request_body_tab_text.insertPlainText('')  
         
+        # request query strings tab
         for item in request_queries:
             entry = active_style.format(item['name'], item['value'])
-            self.request_query_tab_text.append(str(entry))
+            self.request_query_tab_text.append(entry)
         
+        # request cookies tab
         for item in request_cookies:
             entry = active_style.format(item['name'], item['value'])
-            self.request_cookie_tab_text.append(str(entry))
+            self.request_cookie_tab_text.append(entry)
 
-        # parse response headers
+        # response headers tab
         for item in response_headers:
-
-            # display response headers
             entry = active_style.format(item['name'], item['value'])
-            self.response_headers_tab_text.append(str(entry))
+            self.response_headers_tab_text.append(entry)
 
-            # parse 'set-cookie header in response header if we don't have them 
-            # in nice HAR format
+            # parse the 'set-cookie' header in response header if they haven't 
+            # been split out into the 'cookies' key in the HAR file
             if not response_cookies:
                 if item['name'] == 'Set-Cookie' or item['name'] == 'set-cookie':
                     cookie_header = item['value'].split('\n')
                     for cookie in cookie_header:
-                        this_cookie = cookie.split(';')
-                        for each in this_cookie:
+                        cookie = cookie.split(';')
+                        for each in cookie:
                             self.response_cookie_tab_text.append(each.strip())
                         self.response_cookie_tab_text.append('')
 
-        # parse response body
-
-        if response_body != '':
+        # response body tab
+        if response_body not in self.none_types:
             if any(mime in response_body['mimeType'] for mime in body_safelist):
                 try:
                     entry = response_body['text'][:truncate_size]
                     if len(entry) == truncate_size:
-                        entry = '---BODY TRUNCATED--- (Ctrl+X to expand)\n\n' + str(entry)
+                        entry = '[Response body truncated. Use Ctrl+X to expand.]\n\n' + str(entry)
                     self.response_body_tab_text.insertPlainText(entry)
                 except KeyError:
-                    self.response_body_tab_text.insertPlainText('No response body found')
+                    self.response_body_tab_text.insertPlainText('')
+            elif response_body['mimeType'] in self.none_types:
+                self.response_body_tab_text.insertPlainText('')
             else:
-                self.response_body_tab_text.insertPlainText('Non ASCII response')
+                self.response_body_tab_text.insertPlainText('[Non text data]')
         else:
-            self.response_body_tab_text.insertPlainText('No response body found')
+            self.response_body_tab_text.insertPlainText('')
     
-        # parse response cookies
-
+        # response cookies tab
         if response_cookies:
             for item in response_cookies:
                 
-                cookie = {'name':'',
+                cookie = {
+                    'name':'',
                     'value':'',
                     'path':'',
                     'domain':'',
@@ -743,16 +771,31 @@ class MainApp(QMainWindow):
                 cookie_list.append(cookie)
 
             for cookie in cookie_list:
-                entry = '''<b>Name</b>: {}<br>
-                            <b>Value</b>: {}<br>
-                            <b>Path</b>: {}<br>
-                            <b>Domain</b>: {}<br>
-                            <b>Expires</b>: {}<br>
-                            <b>httpOnly</b>: {}<br>
-                            <b>Secure</b>: {}<br>'''.format(
-                                cookie['name'], cookie['value'], cookie['path'],
-                                cookie['domain'], cookie['expires'], cookie['httpOnly'],
-                                cookie['secure'])
+                cookie_style_newline = '''<b>Name</b><br>{}<br><br>
+                                          <b>Value</b><br>{}<br><br>
+                                          <b>Path</b><br>{}<br><br>
+                                          <b>Domain</b><br>{}<br><br>
+                                          <b>Expires</b><br>{}<br><br>
+                                          <b>httpOnly</b><br>{}<br><br>
+                                          <b>Secure</b><br>{}<br><br>
+                                          - - -
+                                          <br>'''
+
+                cookie_style_inline = '''<b>Name</b>: {}<br>
+                                         <b>Value</b>: {}<br>
+                                         <b>Path</b>: {}<br>
+                                         <b>Domain</b>: {}<br>
+                                         <b>Expires</b>: {}<br>
+                                         <b>httpOnly</b>: {}<br>
+                                         <b>Secure</b>: {}<br>'''
+
+                cookie_styles = [cookie_style_newline, cookie_style_inline]
+                active_style = cookie_styles[self.style_option]
+                
+                entry = active_style.format(cookie['name'], cookie['value'], 
+                                            cookie['path'], cookie['domain'], 
+                                            cookie['expires'], cookie['httpOnly'],
+                                            cookie['secure'])
 
                 self.response_cookie_tab_text.append(entry)
         
@@ -767,8 +810,8 @@ class MainApp(QMainWindow):
         self.response_headers_tab_text.moveCursor(QTextCursor.Start)
         self.response_body_tab_text.moveCursor(QTextCursor.Start)
         self.response_cookie_tab_text.moveCursor(QTextCursor.Start)
-
                 
+    
     def expandBody(self):
 
         # if all rows have been removed from entries table do nothing
@@ -777,37 +820,24 @@ class MainApp(QMainWindow):
 
         # get row id
         row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
+        
         # get current body text
-        body_text = self.response_body_tab_text.toPlainText()
+        request_body_text = self.request_body_tab_text.toPlainText()        
+        response_body_text = self.response_body_tab_text.toPlainText()
 
         # show full response body if we know it's been truncated
-        if '---BODY TRUNCATED---' in body_text:
+        if '[Response body truncated. Use Ctrl+X to expand.]' in response_body_text:
             response_body = self.response_body_dict[row_id]
             entry = str(response_body['text'])
             self.response_body_tab_text.setPlainText('')
             self.response_body_tab_text.insertPlainText(entry)
+
+        if '[Request body truncated. Use Ctrl+X to expand.]' in request_body_text:
+            request_body = self.request_body_dict[row_id]
+            entry = str(request_body['text'])
+            self.request_body_tab_text.setPlainText('')
+            self.request_body_tab_text.insertPlainText(entry)
         
-        return
-
-
-    def openFile(self):
-        file_name = QFileDialog.getOpenFileName(self, 'Open file')
-        file_name = file_name[0]
-        
-        # no file selected
-        if file_name == '':
-            return()
-        else:
-        # load the HAR file
-            try:
-                with open(file_name, encoding='utf-8') as har:
-                    self.har = json.load(har)
-                    self.harParse()
-            except json.decoder.JSONDecodeError:
-                self.status_bar.removeWidget(self.progress_bar)
-                self.status_bar.showMessage('Invalid file')
-                return()
-
 
     def changeFont(self):
         font, valid = QFontDialog.getFont()
@@ -856,6 +886,16 @@ class MainApp(QMainWindow):
             self.response_headers_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
             self.response_body_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
             self.response_cookie_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+
+
+    def clearTextEdit(self):
+        self.request_headers_tab_text.setPlainText('')
+        self.request_body_tab_text.setPlainText('')
+        self.request_query_tab_text.setPlainText('')
+        self.request_cookie_tab_text.setPlainText('')
+        self.response_headers_tab_text.setPlainText('')
+        self.response_body_tab_text.setPlainText('')
+        self.response_cookie_tab_text.setPlainText('')
 
 
 class TableWidgetItem(QTableWidgetItem):
