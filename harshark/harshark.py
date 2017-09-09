@@ -7,6 +7,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtGui import QTextOption
+from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAbstractScrollArea
@@ -364,6 +365,8 @@ class MainApp(QMainWindow):
         self.response_headers_dict = {}
         self.response_body_dict = {}
         self.response_cookies_dict = {}
+
+        numeric_columns = [2, 3, 6, 9, 10, 11, 12]
         
         for i, entry in enumerate(har['log']['entries']):
 
@@ -382,8 +385,10 @@ class MainApp(QMainWindow):
             except KeyError:
                 row_data.append('')
             try:
-                row_data.append(entry['time'])
+                row_data.append(str(int(entry['time'])))
             except KeyError:
+                row_data.append('')
+            except TypeError:
                 row_data.append('')
             try:
                 row_data.append(entry['serverIPAddress'])
@@ -428,8 +433,15 @@ class MainApp(QMainWindow):
 
             # populate the entries table
             self.entry_table.insertRow(i)
+
             for j, item in enumerate(row_data):
-                self.entry_table.setItem(i, j, QTableWidgetItem(str(item)))
+
+                # handle numeric sorting
+                if j in numeric_columns:
+                    item = TableWidgetItem(str(item), item)
+                    self.entry_table.setItem(i, j, item)
+                else:
+                    self.entry_table.setItem(i, j, QTableWidgetItem(str(item)))
             
             # fill the requests dictionaries
             try:
@@ -631,6 +643,18 @@ class MainApp(QMainWindow):
                                 cookie['secure'])
 
                 self.response_cookie_tab_text.append(entry)
+        
+        self.scrollTextEdit()
+
+    def scrollTextEdit(self):
+        self.request_headers_tab_text.moveCursor(QTextCursor.Start)
+        self.request_body_tab_text.moveCursor(QTextCursor.Start)
+        self.request_query_tab_text.moveCursor(QTextCursor.Start)
+        self.request_cookie_tab_text.moveCursor(QTextCursor.Start)
+        self.response_headers_tab_text.moveCursor(QTextCursor.Start)
+        self.response_body_tab_text.moveCursor(QTextCursor.Start)
+        self.response_cookie_tab_text.moveCursor(QTextCursor.Start)
+
                 
     def expandBody(self):
 
@@ -698,6 +722,15 @@ class MainApp(QMainWindow):
             self.response_headers_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
             self.response_body_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
             self.response_cookie_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+
+
+class TableWidgetItem(QTableWidgetItem):
+    def __init__(self, text, sortKey):
+            QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
+            self.sortKey = sortKey
+
+    def __lt__(self, other):
+            return self.sortKey < other.sortKey 
 
 def main():
     app = QApplication(sys.argv)
