@@ -5,40 +5,27 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
-from PyQt5.QtGui import QKeySequence
 from PyQt5.QtGui import QTextOption
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
-from PyQt5.QtWidgets import QAbstractScrollArea
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import QComboBox
-from PyQt5.QtWidgets import QDesktopWidget
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QFrame
 from PyQt5.QtWidgets import QGroupBox
-from PyQt5.QtWidgets import QHBoxLayout
-from PyQt5.QtWidgets import QHeaderView
 from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QProgressBar
-from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QListWidget
-from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtWidgets import QSplitter
-from PyQt5.QtWidgets import QStyleFactory
 from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QTableWidget
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtWidgets import QSpinBox
 
 
 class MainApp(QMainWindow):
@@ -181,7 +168,7 @@ class MainApp(QMainWindow):
                         ]
 
         self.entry_table = QTableWidget()
-        self.entry_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        # self.entry_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.entry_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.entry_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.entry_table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
@@ -626,7 +613,8 @@ class MainApp(QMainWindow):
                 'json',
                 'javascript',
                 'js',
-                'xml'
+                'xml',
+                'x-www-form-urlencoded'
         ]
 
         # cookie store
