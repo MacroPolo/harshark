@@ -69,7 +69,7 @@ class MainApp(QMainWindow):
         expand_act.triggered.connect(self.expandBody)
 
         #font choice
-        font_act = QAction('Change &Font', self)
+        font_act = QAction(QIcon('..\images\\font.png'), 'Change &Font...', self)
         font_act.setStatusTip('Change the font used to display request/response information')        
         font_act.triggered.connect(self.changeFont)
 
@@ -80,7 +80,9 @@ class MainApp(QMainWindow):
         resize_act.triggered.connect(self.resizeColumns)
 
         #toggle wordwrap
-        wordwrap_act = QAction('&Toogle &word wrap', self)
+        wordwrap_act = QAction(QIcon('..\images\\wrap.png'), '&Toogle Word Wrap', 
+                               self, checkable=True)
+        wordwrap_act.setChecked(True)
         wordwrap_act.setStatusTip('Toggle word wrap')
         wordwrap_act.setShortcut('Ctrl+W')
         wordwrap_act.triggered.connect(self.toggleWordWrap)
@@ -92,7 +94,7 @@ class MainApp(QMainWindow):
         exit_act.triggered.connect(qApp.quit)
         
         # ---------------------------------------------------------
-        # MENUBAR
+        # MAIN MENU
         # ---------------------------------------------------------
 
         menu_bar = self.menuBar()
@@ -110,7 +112,7 @@ class MainApp(QMainWindow):
         view_menu.addAction(resize_act)
 
         # ---------------------------------------------------------
-        # TOOLBAR
+        # TOOLBARS
         # ---------------------------------------------------------
         
         self.toolbar_actions = self.addToolBar('Useful commands')
@@ -138,7 +140,7 @@ class MainApp(QMainWindow):
         self.status_bar.showMessage('Ready')
 
         # ---------------------------------------------------------
-        # REQUEST TABLE
+        # ENTRY TABLE
         # ---------------------------------------------------------
         header_labels = ['id',
                         'Timestamp',
@@ -266,7 +268,6 @@ class MainApp(QMainWindow):
         # GROUPBOX
         # ---------------------------------------------------------
 
-    
         request_vbox = QVBoxLayout()
         response_vbox = QVBoxLayout()
 
@@ -288,7 +289,7 @@ class MainApp(QMainWindow):
         response_group_box.setLayout(response_vbox)
 
         # ---------------------------------------------------------
-        # WIDGET SPLITTER
+        # WIDGET SPLITTERS
         # ---------------------------------------------------------
 
         splitter_hor = QSplitter(Qt.Horizontal)
@@ -333,7 +334,6 @@ class MainApp(QMainWindow):
                 self.entry_table.removeRow(j)
             # decrement, to move to next row selection group
             number_of_selection_groups -= 1
-
 
     def harParse(self, archive):
 
@@ -700,15 +700,9 @@ class MainApp(QMainWindow):
             self.response_cookie_tab_text.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
 
 def main():
-    stylesheet = """
-        QTextEdit {
-            font: 10pt "Consolas";
-        }
-    """
     app = QApplication(sys.argv)
     app.setFont(QFont('Segoe UI', 10))
     app.setStyle("Fusion")
-    # app.setStyleSheet(stylesheet)
     main_harshark = MainApp()
     sys.exit(app.exec_())
 
