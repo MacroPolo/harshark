@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QActionGroup
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QGroupBox
 from PyQt5.QtWidgets import QMainWindow
@@ -93,6 +94,11 @@ class MainApp(QMainWindow):
         prev_match_act.setShortcut('F4')
         prev_match_act.triggered.connect(self.previousMatch)
 
+        #clear matches
+        clear_match_act = QAction(QIcon('..\images\delete.png'), 'Clear Search', self)
+        clear_match_act.setStatusTip('Clear all search results')
+        clear_match_act.triggered.connect(self.clearSearch)
+
         # select data style
         data_style_inline_act = QAction(QIcon('..\images\inline.png'), 'Compact Style', 
                                         self, checkable=True)
@@ -108,20 +114,6 @@ class MainApp(QMainWindow):
         data_style_group = QActionGroup(self, exclusive=True)
         data_style_group.addAction(data_style_inline_act)
         data_style_group.addAction(data_style_newline_act)
-
-        # select search method, highlight or filter
-        search_highlight_act = QAction(QIcon('..\images\inline.png'), 'Highlight Matches', 
-                                        self, checkable=True)
-        search_filter_act = QAction(QIcon('..\images\inline.png'), 'Filter Matches', 
-                                        self, checkable=True)
-        search_highlight_act.setChecked(True)
-        
-        search_highlight_act.triggered.connect(self.setSearchHighlight)
-        search_filter_act.triggered.connect(self.setSearchFilter)
-        
-        search_option_group = QActionGroup(self, exclusive=True)
-        search_option_group.addAction(search_highlight_act)
-        search_option_group.addAction(search_filter_act)
 
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
@@ -139,18 +131,13 @@ class MainApp(QMainWindow):
         view_menu = menu_bar.addMenu('&View')
         options_menu = menu_bar.addMenu('&Options')
         display_view_menu = QMenu('Display Style', self)
-        search_options_menu = QMenu('Search Options', self)
 
         display_view_menu.addAction(data_style_inline_act)
         display_view_menu.addAction(data_style_newline_act)
         
-        search_options_menu.addAction(search_filter_act)
-        search_options_menu.addAction(search_highlight_act)
-        
         file_menu.addAction(open_act)
         file_menu.addAction(exit_act)
 
-        options_menu.addMenu(search_options_menu)        
         options_menu.addAction(font_act)
 
         view_menu.addMenu(display_view_menu)
@@ -172,16 +159,25 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
         self.toolbar_actions.addAction(resize_col_act)
-        self.toolbar_actions.addAction(prev_match_act)  
-        self.toolbar_actions.addAction(next_match_act)
         
-        self.searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
         searchbox_lbl.setMargin(5)
+        
+        self.searchbox = QLineEdit(self)
         self.searchbox.setPlaceholderText('Enter search query here to highlight matches')
         self.searchbox.returnPressed.connect(self.searchEntries)
+
+        self.searchmode = QComboBox()
+        self.searchmode.addItem('Highlight Results')        
+        self.searchmode.addItem('Filter Results')
+        self.searchmode.currentIndexChanged.connect(self.searchModeChanged)
+
         self.toolbar_search.addWidget(searchbox_lbl)
         self.toolbar_search.addWidget(self.searchbox)
+        self.toolbar_search.addWidget(self.searchmode)
+        self.toolbar_search.addAction(prev_match_act)  
+        self.toolbar_search.addAction(next_match_act)
+        self.toolbar_search.addAction(clear_match_act)
         
         # ---------------------------------------------------------
         # STATUSBAR
@@ -413,6 +409,9 @@ class MainApp(QMainWindow):
 
         # clear any old entries from textboxes
         self.clearTextEdit()
+
+        # clear ny old entries in search bar
+        self.searchbox.setText('')
 
         # columns which should be sorted as numbers rather than strings
         numeric_columns = [2, 3, 6, 9, 10, 11, 12]
@@ -887,13 +886,13 @@ class MainApp(QMainWindow):
     def setNewlineStyle(self):
         self.style_option = 0
 
-    
-    def setSearchFilter(self):
-        self.search_method = 0
 
-
-    def setSearchHighlight(self):
-        self.search_method = 1
+    def searchModeChanged(self):
+        current_search_mode = self.searchmode.currentText()
+        if current_search_mode == 'Highlight Results':
+            self.search_method = 1
+        elif current_search_mode == 'Filter Results':
+            self.search_method = 0
 
 
     def resizeColumns(self):
@@ -988,7 +987,7 @@ class MainApp(QMainWindow):
 
         # flatten the list of list
         matched_items = [item for sublist in matched_items for item in sublist]
-    
+
         matched_rows = []
 
         # get the table row for each QTableWidgetItem object
@@ -1001,6 +1000,8 @@ class MainApp(QMainWindow):
             self.clearSearch()
             self.matched_ordered = []
             return()
+
+        matched_rows = list(set(matched_rows))
 
         # highlight each cell of each table row where a match was found
         for row in matched_rows:
@@ -1022,6 +1023,7 @@ class MainApp(QMainWindow):
 
         # activate the first row
         self.entry_table.setCurrentCell(self.matched_ordered[0], 1)
+        self.status_bar.showMessage('Search Complete : {} Matches'.format(len(matched_rows)))
 
 
     def clearSearch(self):
