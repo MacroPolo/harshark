@@ -7,6 +7,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QTextOption
 from PyQt5.QtGui import QTextCursor
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAction
@@ -140,6 +141,7 @@ class MainApp(QMainWindow):
         searchbox_lbl = QLabel('Search Filter', self)
         searchbox_lbl.setMargin(5)
         searchbox.setPlaceholderText('Enter search query here to highlight matches')
+        searchbox.returnPressed.connect(self.searchEntries)
         self.toolbar_search.addWidget(searchbox_lbl)
         self.toolbar_search.addWidget(searchbox)
         
@@ -885,6 +887,47 @@ class MainApp(QMainWindow):
         self.response_body_tab_text.setPlainText('')
         self.response_cookie_tab_text.setPlainText('')
 
+    
+    def searchEntries(self):
+
+        search_string = 'reserved'
+
+        column_count = self.entry_table.columnCount()
+        row_count = self.entry_table.rowCount()
+
+        matched_items = []
+
+        # look for tabs which contain the search string, grab the request UID
+        # and find the UID in the table to get the QTableWidgetItem object
+        for key, value in self.request_headers_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+
+        # look for any entry table rows which contain the search string and 
+        # get the QTableWidgetItem object
+        matched_items.append(self.entry_table.findItems(search_string, Qt.MatchContains))
+
+        # flatten the list of list
+        matched_items = [item for sublist in matched_items for item in sublist]
+    
+        matched_rows = []
+
+        # get the table row for each QTableWidgetItem object
+        if len(matched_items) > 0:
+            for item in matched_items:
+                matched_rows.append(self.entry_table.row(item))
+        # no matches
+        else:
+            self.status_bar.showMessage('No matched found')
+            return()
+
+        # highlight each cell of each table row where a match was found
+        for row in matched_rows:
+            for column in range(column_count):
+                item = self.entry_table.item(row, column)
+                item.setBackground(QColor(255, 255, 128))
+                
+            
 
 class TableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
