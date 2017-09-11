@@ -35,8 +35,8 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.style_option = 1
-        self.search_method = 1
+        self.display_mode = 1
+        self.search_mode = 1
         self.initUI()
         
     def initUI(self):
@@ -99,22 +99,6 @@ class MainApp(QMainWindow):
         clear_match_act.setStatusTip('Clear all search results')
         clear_match_act.triggered.connect(self.clearSearch)
 
-        # select data style
-        data_style_inline_act = QAction(QIcon('..\images\inline.png'), 'Compact Style', 
-                                        self, checkable=True)
-        data_style_newline_act = QAction(QIcon('..\images\\newline.png'), 'Spaced Style', 
-                                         self, checkable=True)
-        data_style_inline_act.setShortcut('Ctrl+I')
-        data_style_newline_act.setShortcut('Ctrl+N')
-        data_style_inline_act.setChecked(True)
-        
-        data_style_inline_act.triggered.connect(self.setInlineStyle)
-        data_style_newline_act.triggered.connect(self.setNewlineStyle)
-        
-        data_style_group = QActionGroup(self, exclusive=True)
-        data_style_group.addAction(data_style_inline_act)
-        data_style_group.addAction(data_style_newline_act)
-
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
@@ -128,22 +112,12 @@ class MainApp(QMainWindow):
         menu_bar = self.menuBar()
 
         file_menu = menu_bar.addMenu('&File')
-        view_menu = menu_bar.addMenu('&View')
         options_menu = menu_bar.addMenu('&Options')
-        display_view_menu = QMenu('Display Style', self)
-
-        display_view_menu.addAction(data_style_inline_act)
-        display_view_menu.addAction(data_style_newline_act)
-        
+      
         file_menu.addAction(open_act)
         file_menu.addAction(exit_act)
 
         options_menu.addAction(font_act)
-
-        view_menu.addMenu(display_view_menu)
-        view_menu.addAction(resize_col_act)
-        view_menu.addAction(wordwrap_act)
-        view_menu.addSeparator()
 
         # ---------------------------------------------------------
         # TOOLBARS
@@ -155,10 +129,20 @@ class MainApp(QMainWindow):
         self.toolbar_search.setFloatable(False)
         self.toolbar_actions.setFloatable(False)
 
+        self.displaymode = QComboBox()
+        self.displaymode.addItem('Compact')
+        self.displaymode.addItem('Spaced')
+        self.displaymode.currentIndexChanged.connect(self.displayModeChanged)
+
         self.toolbar_actions.addAction(open_act)
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
+        self.toolbar_actions.addAction(wordwrap_act)
         self.toolbar_actions.addAction(resize_col_act)
+        self.toolbar_actions.addSeparator()
+        display_mode_lbl = QLabel('Display Mode: ', self)
+        self.toolbar_actions.addWidget(display_mode_lbl)            
+        self.toolbar_actions.addWidget(self.displaymode)
         
         searchbox_lbl = QLabel('Search Filter', self)
         searchbox_lbl.setMargin(5)
@@ -604,7 +588,7 @@ class MainApp(QMainWindow):
         # update the statusbar on success
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
-        self.status_bar.showMessage('HAR imported sucessfully')
+        self.status_bar.showMessage('HAR loaded sucessfully')
 
         # turn on sorting
         self.entry_table.setSortingEnabled(True)
@@ -661,7 +645,7 @@ class MainApp(QMainWindow):
 
         # newline name value style
         data_styles = ['<b>{}</b><br>{}<br>', '<b>{}</b>: {}']
-        active_style = data_styles[self.style_option]
+        active_style = data_styles[self.display_mode]
 
         # clear old data from the text boxes
         self.clearTextEdit()
@@ -817,7 +801,7 @@ class MainApp(QMainWindow):
                                          <b>Secure</b>: {}<br>'''
 
                 cookie_styles = [cookie_style_newline, cookie_style_inline]
-                active_style = cookie_styles[self.style_option]
+                active_style = cookie_styles[self.display_mode]
                 
                 entry = active_style.format(cookie['name'], cookie['value'], 
                                             cookie['path'], cookie['domain'], 
@@ -878,21 +862,21 @@ class MainApp(QMainWindow):
             self.response_body_tab_text.setFont(font)
             self.response_cookie_tab_text.setFont(font)
 
-    
-    def setInlineStyle(self):
-        self.style_option = 1
-
-
-    def setNewlineStyle(self):
-        self.style_option = 0
-
 
     def searchModeChanged(self):
         current_search_mode = self.searchmode.currentText()
         if current_search_mode == 'Highlight Results':
-            self.search_method = 1
+            self.search_mode = 1
         elif current_search_mode == 'Filter Results':
-            self.search_method = 0
+            self.search_mode = 0
+
+
+    def displayModeChanged(self):
+        current_display_mode = self.displaymode.currentText()
+        if current_display_mode == 'Compact':
+            self.display_mode = 1
+        elif current_display_mode == 'Spaced':
+            self.display_mode = 0
 
 
     def resizeColumns(self):
@@ -1016,7 +1000,7 @@ class MainApp(QMainWindow):
             if item.background().color().blue() == 128:
                 self.matched_ordered.append(row)
 
-        if self.search_method == 0:
+        if self.search_mode == 0:
             for row in range(row_count):
                 if row not in matched_rows:
                     self.entry_table.setRowHidden(row, True)
