@@ -79,6 +79,19 @@ class MainApp(QMainWindow):
         wordwrap_act.setShortcut('Ctrl+W')
         wordwrap_act.triggered.connect(self.toggleWordWrap)
 
+        #next match
+        next_match_act = QAction(QIcon('..\images\\forward.png'), '&Next match', self)
+        next_match_act.setStatusTip('Goto next match')
+        next_match_act.setShortcut('F3')
+        next_match_act.triggered.connect(self.nextMatch)
+
+        #previous match
+        prev_match_act = QAction(QIcon('..\images\\backward.png'), '&Previous match', self)
+        prev_match_act.setStatusTip('Goto previous match')
+        prev_match_act.setShortcut('F4')
+        prev_match_act.triggered.connect(self.previousMatch)
+
+
         # select data style
         data_style_inline_act = QAction(QIcon('..\images\inline.png'), 'Compact Style', 
                                         self, checkable=True)
@@ -136,14 +149,16 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
         self.toolbar_actions.addAction(resize_col_act)
+        self.toolbar_actions.addAction(next_match_act)
+        self.toolbar_actions.addAction(prev_match_act)        
         
-        searchbox = QLineEdit(self)
+        self.searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
         searchbox_lbl.setMargin(5)
-        searchbox.setPlaceholderText('Enter search query here to highlight matches')
-        searchbox.returnPressed.connect(self.searchEntries)
+        self.searchbox.setPlaceholderText('Enter search query here to highlight matches')
+        self.searchbox.returnPressed.connect(self.searchEntries)
         self.toolbar_search.addWidget(searchbox_lbl)
-        self.toolbar_search.addWidget(searchbox)
+        self.toolbar_search.addWidget(self.searchbox)
         
         # ---------------------------------------------------------
         # STATUSBAR
@@ -890,7 +905,15 @@ class MainApp(QMainWindow):
     
     def searchEntries(self):
 
-        search_string = 'reserved'
+        # remove any previous search highlights
+        self.clearHighlights()
+
+        search_string = self.searchbox.text()
+
+        # if search string is blank clear out the ordered list of highligted rows
+        if search_string == '':
+            self.matched_ordered = []
+            return()
 
         column_count = self.entry_table.columnCount()
         row_count = self.entry_table.rowCount()
@@ -899,7 +922,32 @@ class MainApp(QMainWindow):
 
         # look for tabs which contain the search string, grab the request UID
         # and find the UID in the table to get the QTableWidgetItem object
+
         for key, value in self.request_headers_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+        
+        for key, value in self.request_body_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+        
+        for key, value in self.request_cookies_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+        
+        for key, value in self.request_queries_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+        
+        for key, value in self.response_headers_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+        
+        for key, value in self.response_body_dict.items():
+            if search_string in str(value):
+                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+        
+        for key, value in self.response_cookies_dict.items():
             if search_string in str(value):
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
 
@@ -919,6 +967,8 @@ class MainApp(QMainWindow):
         # no matches
         else:
             self.status_bar.showMessage('No matched found')
+            self.clearHighlights()
+            self.matched_ordered = []
             return()
 
         # highlight each cell of each table row where a match was found
@@ -926,8 +976,95 @@ class MainApp(QMainWindow):
             for column in range(column_count):
                 item = self.entry_table.item(row, column)
                 item.setBackground(QColor(255, 255, 128))
-                
-            
+
+        # get an ordered list of all matched rows
+        self.matched_ordered = []
+        for row in range(row_count):
+            item = self.entry_table.item(row, 1)
+            if item.background().color().blue() == 128:
+                self.matched_ordered.append(row)
+
+        # activate the first row
+        self.entry_table.setCurrentCell(self.matched_ordered[0], 1)
+
+
+    def clearHighlights(self):
+        column_count = self.entry_table.columnCount()
+        row_count = self.entry_table.rowCount()
+
+        for row in range(row_count):
+                for column in range(column_count):
+                    item = self.entry_table.item(row, column)
+                    item.setBackground(QColor(255, 255, 255))
+
+
+    def previousMatch(self):
+        
+        # do nothing if there is there is no matches in the list or if
+        # the list hasn't even been initalised (no HAR loaded)
+        try:
+            if self.matched_ordered == []:
+                return()
+        except AttributeError:
+            return()
+
+        # get current selected row
+        current_row = self.entry_table.currentRow()
+
+        for i, row in reversed(list(enumerate(self.matched_ordered))):
+            # current row matches a highlighted row
+            if row == current_row:
+                try:
+                    next_row = self.matched_ordered[i - 1]
+                    break
+                # end of the index
+                except IndexError:
+                    next_row = self.matched_ordered[len(self.matched_ordered) - 1]
+                    break
+            # current row does not match a highlighted row
+            elif row < current_row:
+                next_row = row
+                break
+            # end of the index
+            else:
+                next_row = self.matched_ordered[len(self.matched_ordered) - 1]
+
+        self.entry_table.setCurrentCell(next_row, 1)
+
+
+    def nextMatch(self):
+
+        # do nothing if there is there is no matches in the list or if
+        # the list hasn't even been initalised (no HAR loaded)
+        try:
+            if self.matched_ordered == []:
+                return()
+        except AttributeError:
+            return()
+
+        # get current selected row
+        current_row = self.entry_table.currentRow()
+
+        for i, row in enumerate(self.matched_ordered):
+            # current row matches a highlighted row
+            if row == current_row:
+                try:
+                    next_row = self.matched_ordered[i + 1]
+                    break
+                # end of the index
+                except IndexError:
+                    next_row = self.matched_ordered[0]
+                    break
+            # current row does not match a highlighted row
+            elif row > current_row:
+                next_row = row
+                break
+            # end of the index
+            else:
+                next_row = self.matched_ordered[0]
+
+        self.entry_table.setCurrentCell(next_row, 1)
+        
 
 class TableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
