@@ -149,8 +149,8 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
         self.toolbar_actions.addAction(resize_col_act)
+        self.toolbar_actions.addAction(prev_match_act)  
         self.toolbar_actions.addAction(next_match_act)
-        self.toolbar_actions.addAction(prev_match_act)        
         
         self.searchbox = QLineEdit(self)
         searchbox_lbl = QLabel('Search Filter', self)
@@ -908,7 +908,7 @@ class MainApp(QMainWindow):
         # remove any previous search highlights
         self.clearHighlights()
 
-        search_string = self.searchbox.text()
+        search_string = str(self.searchbox.text()).lower()
 
         # if search string is blank clear out the ordered list of highligted rows
         if search_string == '':
@@ -924,31 +924,31 @@ class MainApp(QMainWindow):
         # and find the UID in the table to get the QTableWidgetItem object
 
         for key, value in self.request_headers_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.request_body_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.request_cookies_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.request_queries_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.response_headers_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.response_body_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.response_cookies_dict.items():
-            if search_string in str(value):
+            if search_string in str(value).lower():
                 matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
 
         # look for any entry table rows which contain the search string and 
@@ -966,10 +966,11 @@ class MainApp(QMainWindow):
                 matched_rows.append(self.entry_table.row(item))
         # no matches
         else:
-            self.status_bar.showMessage('No matched found')
+            self.status_bar.showMessage('No matches found')
             self.clearHighlights()
             self.matched_ordered = []
             return()
+
 
         # highlight each cell of each table row where a match was found
         for row in matched_rows:
@@ -983,6 +984,11 @@ class MainApp(QMainWindow):
             item = self.entry_table.item(row, 1)
             if item.background().color().blue() == 128:
                 self.matched_ordered.append(row)
+
+        if True:
+            for row in range(row_count):
+                if row not in matched_rows:
+                    self.entry_table.setRowHidden(row, True)
 
         # activate the first row
         self.entry_table.setCurrentCell(self.matched_ordered[0], 1)
@@ -1076,6 +1082,7 @@ class TableWidgetItem(QTableWidgetItem):
             return self.sortKey < other.sortKey
         except TypeError:
             return -1
+
 
 def main():
     app = QApplication(sys.argv)
