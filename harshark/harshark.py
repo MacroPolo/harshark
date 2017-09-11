@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QSplitter
 from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QTableWidget
@@ -34,6 +35,7 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.style_option = 1
+        self.search_method = 1
         self.initUI()
         
     def initUI(self):
@@ -91,7 +93,6 @@ class MainApp(QMainWindow):
         prev_match_act.setShortcut('F4')
         prev_match_act.triggered.connect(self.previousMatch)
 
-
         # select data style
         data_style_inline_act = QAction(QIcon('..\images\inline.png'), 'Compact Style', 
                                         self, checkable=True)
@@ -107,7 +108,21 @@ class MainApp(QMainWindow):
         data_style_group = QActionGroup(self, exclusive=True)
         data_style_group.addAction(data_style_inline_act)
         data_style_group.addAction(data_style_newline_act)
+
+        # select search method, highlight or filter
+        search_highlight_act = QAction(QIcon('..\images\inline.png'), 'Highlight Matches', 
+                                        self, checkable=True)
+        search_filter_act = QAction(QIcon('..\images\inline.png'), 'Filter Matches', 
+                                        self, checkable=True)
+        search_highlight_act.setChecked(True)
         
+        search_highlight_act.triggered.connect(self.setSearchHighlight)
+        search_filter_act.triggered.connect(self.setSearchFilter)
+        
+        search_option_group = QActionGroup(self, exclusive=True)
+        search_option_group.addAction(search_highlight_act)
+        search_option_group.addAction(search_filter_act)
+
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
@@ -123,14 +138,22 @@ class MainApp(QMainWindow):
         file_menu = menu_bar.addMenu('&File')
         view_menu = menu_bar.addMenu('&View')
         options_menu = menu_bar.addMenu('&Options')
+        display_view_menu = QMenu('Display Style', self)
+        search_options_menu = QMenu('Search Options', self)
 
+        display_view_menu.addAction(data_style_inline_act)
+        display_view_menu.addAction(data_style_newline_act)
+        
+        search_options_menu.addAction(search_filter_act)
+        search_options_menu.addAction(search_highlight_act)
+        
         file_menu.addAction(open_act)
         file_menu.addAction(exit_act)
 
+        options_menu.addMenu(search_options_menu)        
         options_menu.addAction(font_act)
-        options_menu.addAction(data_style_inline_act)
-        options_menu.addAction(data_style_newline_act)
 
+        view_menu.addMenu(display_view_menu)
         view_menu.addAction(resize_col_act)
         view_menu.addAction(wordwrap_act)
         view_menu.addSeparator()
@@ -864,6 +887,14 @@ class MainApp(QMainWindow):
     def setNewlineStyle(self):
         self.style_option = 0
 
+    
+    def setSearchFilter(self):
+        self.search_method = 0
+
+
+    def setSearchHighlight(self):
+        self.search_method = 1
+
 
     def resizeColumns(self):
         self.entry_table.resizeColumnsToContents()
@@ -906,7 +937,7 @@ class MainApp(QMainWindow):
     def searchEntries(self):
 
         # remove any previous search highlights
-        self.clearHighlights()
+        self.clearSearch()
 
         search_string = str(self.searchbox.text()).lower()
 
@@ -967,10 +998,9 @@ class MainApp(QMainWindow):
         # no matches
         else:
             self.status_bar.showMessage('No matches found')
-            self.clearHighlights()
+            self.clearSearch()
             self.matched_ordered = []
             return()
-
 
         # highlight each cell of each table row where a match was found
         for row in matched_rows:
@@ -985,7 +1015,7 @@ class MainApp(QMainWindow):
             if item.background().color().blue() == 128:
                 self.matched_ordered.append(row)
 
-        if True:
+        if self.search_method == 0:
             for row in range(row_count):
                 if row not in matched_rows:
                     self.entry_table.setRowHidden(row, True)
@@ -994,14 +1024,17 @@ class MainApp(QMainWindow):
         self.entry_table.setCurrentCell(self.matched_ordered[0], 1)
 
 
-    def clearHighlights(self):
+    def clearSearch(self):
         column_count = self.entry_table.columnCount()
         row_count = self.entry_table.rowCount()
 
         for row in range(row_count):
-                for column in range(column_count):
-                    item = self.entry_table.item(row, column)
-                    item.setBackground(QColor(255, 255, 255))
+            # unhide
+            self.entry_table.setRowHidden(row, False)
+            # remove highlight
+            for column in range(column_count):
+                item = self.entry_table.item(row, column)
+                item.setBackground(QColor(255, 255, 255))
 
 
     def previousMatch(self):
