@@ -2,21 +2,19 @@ import json
 import random
 import string
 import sys
-import time
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QBrush
+from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QFont
 from PyQt5.QtGui import QIcon
-from PyQt5.QtGui import QTextOption
-from PyQt5.QtGui import QTextCursor
-from PyQt5.QtGui import QColor
-from PyQt5.QtGui import QBrush
-from PyQt5.QtGui import QTextCharFormat
-from PyQt5.QtGui import QTextDocument
 from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QTextCharFormat
+from PyQt5.QtGui import QTextCursor
+from PyQt5.QtGui import QTextDocument
+from PyQt5.QtGui import QTextOption
 from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAction
-from PyQt5.QtWidgets import QActionGroup
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QComboBox
@@ -26,7 +24,6 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QMenu
 from PyQt5.QtWidgets import QSplitter
 from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QTableWidget
@@ -42,22 +39,28 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        # default details display mode = compact (inline)
         self.display_mode = 1
+        # default search mode = highlight matches
         self.search_mode = 1
+        # default case sensitivity mode = case insensitive
         self.case_mode = 1
+        # default highlight colour = yellow
         self.chosen_colour = QColor(255, 255, 128)
         self.initUI()
         
-    def initUI(self):
 
+    def initUI(self):
 
         # ---------------------------------------------------------
         # SHORTCUTS
         # ---------------------------------------------------------
 
+        # F5 to loop through search results in request tabs
         self.sc_next_match_request = QShortcut(QKeySequence("F5"), self)
         self.sc_next_match_request.activated.connect(self.nextMatchRequest)
 
+        # F6 to loop through search results in request tabs        
         self.sc_next_match_response = QShortcut(QKeySequence("F6"), self)
         self.sc_next_match_response.activated.connect(self.nextMatchResponse)
 
@@ -70,72 +73,72 @@ class MainApp(QMainWindow):
         open_act.setShortcut('Ctrl+O')
         open_act.setStatusTip('Open a new HAR file')
         open_act.triggered.connect(self.openFile)
-        
-        #delete
-        delete_act = QAction(QIcon('..\images\delete.png'), '&Delete Entry', self)
-        delete_act.setStatusTip('Delete the selected requests')
-        delete_act.setShortcut('Delete')
-        delete_act.triggered.connect(self.deleteRow)
-
-        #expand
-        expand_act = QAction(QIcon('..\images\expand.png'), 'Expand Response Body', self)
-        expand_act.setStatusTip('Show full response body content')
-        expand_act.setShortcut('Ctrl+X')
-        expand_act.triggered.connect(self.expandBody)
-
-        #font choice
-        font_act = QAction(QIcon('..\images\\font.png'), 'Select &Font...', self)
-        font_act.setStatusTip('Change the font used to display request/response information')        
-        font_act.triggered.connect(self.changeFont)
-
-        #highlight choice
-        colour_act = QAction(QIcon('..\images\\font.png'), 'Select &Highlight Colour...', self)
-        colour_act.setStatusTip('Change the color used to highlight search matches')        
-        colour_act.triggered.connect(self.changeHighlight)
-
-        #resize columns to fit
-        resize_col_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns to Fit', self)
-        resize_col_act.setStatusTip('Resize all columns to fit')
-        resize_col_act.setShortcut('Ctrl+R')
-        resize_col_act.triggered.connect(self.resizeColumns)
-
-        #toggle wordwrap
-        wordwrap_act = QAction(QIcon('..\images\\wrap.png'), '&Toogle Word Wrap', 
-                               self, checkable=True)
-        wordwrap_act.setChecked(True)
-        wordwrap_act.setStatusTip('Toggle word wrap')
-        wordwrap_act.setShortcut('Ctrl+W')
-        wordwrap_act.triggered.connect(self.toggleWordWrap)
-
-        #next match
-        next_match_act = QAction(QIcon('..\images\\forward.png'), '&Next match', self)
-        next_match_act.setStatusTip('Goto next match')
-        next_match_act.setShortcut('F3')
-        next_match_act.triggered.connect(self.nextMatch)
-
-        #previous match
-        prev_match_act = QAction(QIcon('..\images\\backward.png'), '&Previous match', self)
-        prev_match_act.setStatusTip('Goto previous match')
-        prev_match_act.setShortcut('F4')
-        prev_match_act.triggered.connect(self.previousMatch)
-
-        #clear matches
-        clear_match_act = QAction(QIcon('..\images\delete.png'), 'Clear Search', self)
-        clear_match_act.setStatusTip('Clear all search results')
-        clear_match_act.triggered.connect(self.clearSearch)
-
-        #toggle case sensitivity
-        self.case_act = QAction(QIcon('..\images\case.png'), 'Toggle Case Sensitive Match', 
-                           self, checkable=True)
-        self.case_act.setChecked(False)                           
-        self.case_act.setStatusTip('Toggle case sensitive matching')
-        self.case_act.triggered.connect(self.toggleCase)
 
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
         exit_act.setStatusTip('Exit Harshark')
         exit_act.triggered.connect(qApp.quit)
+
+        #font choice
+        font_act = QAction(QIcon('..\images\\font.png'), 'Choose &Font...', self)
+        font_act.setStatusTip('Choose the font used to display HAR data')        
+        font_act.triggered.connect(self.changeFont)
+
+        #highlight colour choice
+        colour_act = QAction(QIcon('..\images\\colour.png'), 'Choose &Highlight Colour...', self)
+        colour_act.setStatusTip('Choose the colour used to highlight search matches')        
+        colour_act.triggered.connect(self.changeHighlight)
+        
+        #delete
+        delete_act = QAction(QIcon('..\images\delete.png'), 'Delete Row', self)
+        delete_act.setStatusTip('Delete the selected requests')
+        delete_act.setShortcut('Delete')
+        delete_act.triggered.connect(self.deleteRow)
+
+        #expand
+        expand_act = QAction(QIcon('..\images\expand.png'), 'Display all Body Content', self)
+        expand_act.setStatusTip('Display all body content for this request/response')
+        expand_act.setShortcut('Ctrl+X')
+        expand_act.triggered.connect(self.expandBody)
+
+        #resize columns to fit
+        resize_col_act = QAction(QIcon('..\images\\resize.png'), 'Resize Columns to Fit', self)
+        resize_col_act.setStatusTip('Resize all columns to fit')
+        resize_col_act.setShortcut('Ctrl+R')
+        resize_col_act.triggered.connect(self.resizeColumns)
+
+        #next match
+        next_match_act = QAction(QIcon('..\images\\forward.png'), 'Next match', self)
+        next_match_act.setStatusTip('Go to next match')
+        next_match_act.setShortcut('F3')
+        next_match_act.triggered.connect(self.nextMatch)
+
+        #previous match
+        prev_match_act = QAction(QIcon('..\images\\backward.png'), 'Previous match', self)
+        prev_match_act.setStatusTip('Go to previous match')
+        prev_match_act.setShortcut('F4')
+        prev_match_act.triggered.connect(self.previousMatch)
+
+        #clear matches
+        clear_match_act = QAction(QIcon('..\images\\remove.png'), 'Clear Search Results', self)
+        clear_match_act.setStatusTip('Clear all search results')
+        clear_match_act.triggered.connect(self.clearSearch)
+
+        #toggle case sensitivity
+        self.case_act = QAction(QIcon('..\images\case.png'), 'Toggle Case Sensitive Matching', 
+                           self, checkable=True)
+        self.case_act.setChecked(False)                           
+        self.case_act.setStatusTip('Toggle case sensitive matching')
+        self.case_act.triggered.connect(self.toggleCase)
+
+        #toggle wordwrap
+        wordwrap_act = QAction(QIcon('..\images\\wrap.png'), 'Toogle Word Wrap', 
+                               self, checkable=True)
+        wordwrap_act.setChecked(True)
+        wordwrap_act.setStatusTip('Toggle word wrap')
+        wordwrap_act.setShortcut('Ctrl+W')
+        wordwrap_act.triggered.connect(self.toggleWordWrap)
         
         # ---------------------------------------------------------
         # MAIN MENU
@@ -156,7 +159,7 @@ class MainApp(QMainWindow):
         # TOOLBARS
         # ---------------------------------------------------------
         
-        self.toolbar_actions = self.addToolBar('Useful commands')
+        self.toolbar_actions = self.addToolBar('Tools')
         self.toolbar_search = self.addToolBar('Search & Filter')  
                
         self.toolbar_search.setFloatable(False)
@@ -165,36 +168,41 @@ class MainApp(QMainWindow):
         self.displaymode = QComboBox()
         self.displaymode.addItem('Compact')
         self.displaymode.addItem('Spaced')
+        self.displaymode.setStatusTip('Choose layout of request/response content')
         self.displaymode.currentIndexChanged.connect(self.displayModeChanged)
 
         display_mode_lbl = QLabel('Display Mode: ', self)
+        display_mode_lbl.setMargin(5)
         
         self.toolbar_actions.addAction(open_act)
+        self.toolbar_actions.addSeparator()
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(expand_act)
-        self.toolbar_actions.addAction(wordwrap_act)
         self.toolbar_actions.addAction(resize_col_act)
+        self.toolbar_actions.addAction(wordwrap_act)
         self.toolbar_actions.addSeparator()
-        self.toolbar_actions.addWidget(display_mode_lbl)            
+        self.toolbar_actions.addWidget(display_mode_lbl)
         self.toolbar_actions.addWidget(self.displaymode)
-        
-        searchbox_lbl = QLabel('Search Filter', self)
+
+        searchbox_lbl = QLabel('Search: ', self)
         searchbox_lbl.setMargin(5)
         
         self.searchbox = QLineEdit(self)
-        self.searchbox.setPlaceholderText('Enter search query here to highlight matches')
+        self.searchbox.setPlaceholderText('Enter search query here to find matches')
+        self.searchbox.setStatusTip('Highlight or filter requests which contain search term')
         self.searchbox.returnPressed.connect(self.searchEntries)
 
         self.searchmode = QComboBox()
-        self.searchmode.addItem('Highlight Results')        
+        self.searchmode.addItem('Highlight Results')
         self.searchmode.addItem('Filter Results')
+        self.searchmode.setStatusTip('Choose to either hightlight or filter requests which contain search term')
         self.searchmode.currentIndexChanged.connect(self.searchModeChanged)
         
         self.toolbar_search.addWidget(searchbox_lbl)
         self.toolbar_search.addWidget(self.searchbox)
         self.toolbar_search.addWidget(self.searchmode)
-        self.toolbar_search.addAction(self.case_act)        
-        self.toolbar_search.addSeparator()        
+        self.toolbar_search.addAction(self.case_act)
+        self.toolbar_search.addSeparator()
         self.toolbar_search.addAction(prev_match_act)
         self.toolbar_search.addAction(next_match_act)
         self.toolbar_search.addAction(clear_match_act)
@@ -224,7 +232,6 @@ class MainApp(QMainWindow):
                         ]
 
         self.entry_table = QTableWidget()
-        # self.entry_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.entry_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.entry_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.entry_table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
@@ -973,12 +980,18 @@ class MainApp(QMainWindow):
         # remove any previous search highlights
         self.clearSearch()
 
-        if self.case_mode == 1:
-            search_string = str(self.searchbox.text()).lower()
+        find_flags = Qt.MatchFlags()
+        
+        # check for case sensitive matching mode
+        if self.case_mode == 0:
+            find_flags = Qt.MatchCaseSensitive
         else:
-            search_string = str(self.searchbox.text())
+            find_flags = Qt.MatchContains
+
+        search_string = str(self.searchbox.text())
 
         # if search string is blank clear out the ordered list of highligted rows
+        
         if search_string == '':
             self.matched_ordered = []
             return()
@@ -990,66 +1003,58 @@ class MainApp(QMainWindow):
 
         # look for tabs which contain the search string, grab the request UID
         # and find the UID in the table to get the QTableWidgetItem object
-
-        for key, value in self.request_headers_dict.items():
-            if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
-            else:
-                if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
-        
+     
         for key, value in self.request_body_dict.items():
             if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
         
         for key, value in self.request_cookies_dict.items():
             if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
 
         for key, value in self.request_queries_dict.items():
             if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
         
         for key, value in self.response_headers_dict.items():
             if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
         
         for key, value in self.response_body_dict.items():
             if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
         
         for key, value in self.response_cookies_dict.items():
             if self.case_mode == 1:
-                if search_string in str(value).lower():
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
-                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
 
         # look for any entry table rows which contain the search string and 
         # get the QTableWidgetItem object
-        matched_items.append(self.entry_table.findItems(search_string, Qt.MatchContains))
+        matched_items.append(self.entry_table.findItems(search_string, find_flags))
 
         # flatten the list of list
         matched_items = [item for sublist in matched_items for item in sublist]
