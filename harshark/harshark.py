@@ -12,6 +12,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QTextCharFormat
 from PyQt5.QtGui import QTextDocument
+from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QFontDialog
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAction
@@ -33,6 +34,8 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import QColorDialog
 
 
 class MainApp(QMainWindow):
@@ -41,10 +44,22 @@ class MainApp(QMainWindow):
         super().__init__()
         self.display_mode = 1
         self.search_mode = 1
-        self.case_mode = 1  
+        self.case_mode = 1
+        self.chosen_colour = QColor(255, 255, 128)
         self.initUI()
         
     def initUI(self):
+
+
+        # ---------------------------------------------------------
+        # SHORTCUTS
+        # ---------------------------------------------------------
+
+        self.sc_next_match_request = QShortcut(QKeySequence("F5"), self)
+        self.sc_next_match_request.activated.connect(self.nextMatchRequest)
+
+        self.sc_next_match_response = QShortcut(QKeySequence("F6"), self)
+        self.sc_next_match_response.activated.connect(self.nextMatchResponse)
 
         # ---------------------------------------------------------
         # ACTIONS
@@ -73,6 +88,11 @@ class MainApp(QMainWindow):
         font_act.setStatusTip('Change the font used to display request/response information')        
         font_act.triggered.connect(self.changeFont)
 
+        #highlight choice
+        colour_act = QAction(QIcon('..\images\\font.png'), 'Select &Highlight Colour...', self)
+        colour_act.setStatusTip('Change the color used to highlight search matches')        
+        colour_act.triggered.connect(self.changeHighlight)
+
         #resize columns to fit
         resize_col_act = QAction(QIcon('..\images\\resize.png'), '&Resize Columns to Fit', self)
         resize_col_act.setStatusTip('Resize all columns to fit')
@@ -92,18 +112,6 @@ class MainApp(QMainWindow):
         next_match_act.setStatusTip('Goto next match')
         next_match_act.setShortcut('F3')
         next_match_act.triggered.connect(self.nextMatch)
-
-        #next match request
-        next_match_request_act = QAction(QIcon('..\images\\forward.png'), 'Next match Request', self)
-        next_match_request_act.setStatusTip('Goto next match')
-        next_match_request_act.setShortcut('F5')
-        next_match_request_act.triggered.connect(self.nextMatchRequest)
-
-        #next match response
-        next_match_response_act = QAction(QIcon('..\images\\forward.png'), 'Next match Response', self)
-        next_match_response_act.setStatusTip('Goto next match')
-        next_match_response_act.setShortcut('F6')
-        next_match_response_act.triggered.connect(self.nextMatchResponse)
 
         #previous match
         prev_match_act = QAction(QIcon('..\images\\backward.png'), '&Previous match', self)
@@ -142,7 +150,8 @@ class MainApp(QMainWindow):
         file_menu.addAction(exit_act)
 
         options_menu.addAction(font_act)
-
+        options_menu.addAction(colour_act)
+        
         # ---------------------------------------------------------
         # TOOLBARS
         # ---------------------------------------------------------
@@ -189,8 +198,6 @@ class MainApp(QMainWindow):
         self.toolbar_search.addAction(prev_match_act)
         self.toolbar_search.addAction(next_match_act)
         self.toolbar_search.addAction(clear_match_act)
-        self.toolbar_search.addAction(next_match_request_act)
-        self.toolbar_search.addAction(next_match_response_act)
 
         # ---------------------------------------------------------
         # STATUSBAR
@@ -373,7 +380,7 @@ class MainApp(QMainWindow):
         
         self.showMaximized()
         # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.3')
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.4')
         # app icon
         self.setWindowIcon(QIcon('..\images\logo2.png'))
         # display the app
@@ -896,6 +903,10 @@ class MainApp(QMainWindow):
             self.response_cookie_tab_text.setFont(font)
 
 
+    def changeHighlight(self):
+        self.chosen_colour = QColorDialog.getColor()
+        
+        
     def searchModeChanged(self):
         current_search_mode = self.searchmode.currentText()
         if current_search_mode == 'Highlight Results':
@@ -1062,13 +1073,13 @@ class MainApp(QMainWindow):
         for row in matched_rows:
             for column in range(column_count):
                 item = self.entry_table.item(row, column)
-                item.setBackground(QColor(255, 255, 128))
+                item.setBackground(self.chosen_colour)
 
         # get an ordered list of all matched rows
         self.matched_ordered = []
         for row in range(row_count):
             item = self.entry_table.item(row, 1)
-            if item.background().color().blue() == 128:
+            if item.background().color() == self.chosen_colour:
                 self.matched_ordered.append(row)
 
         if self.search_mode == 0:
@@ -1197,7 +1208,7 @@ class MainApp(QMainWindow):
             active_qtextedit = self.request_cookie_tab_text            
 
         highlight_style = QTextCharFormat()
-        highlight_style.setBackground(QBrush(QColor(255, 255, 128)))
+        highlight_style.setBackground(QBrush(self.chosen_colour))
 
         self.cursor_locations = []
 
@@ -1220,8 +1231,6 @@ class MainApp(QMainWindow):
     def nextMatchRequest(self):
 
         active_tab = self.request_tabs.currentIndex()
-
-        print('test')
 
         # get active QTextEdit object
         if active_tab == 0:
@@ -1304,7 +1313,7 @@ class MainApp(QMainWindow):
             active_qtextedit = self.response_cookie_tab_text      
 
         highlight_style = QTextCharFormat()
-        highlight_style.setBackground(QBrush(QColor(255, 255, 128)))
+        highlight_style.setBackground(QBrush(self.chosen_colour))
 
         self.cursor_locations = []
 
