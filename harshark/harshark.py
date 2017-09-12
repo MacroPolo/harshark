@@ -37,6 +37,7 @@ class MainApp(QMainWindow):
         super().__init__()
         self.display_mode = 1
         self.search_mode = 1
+        self.case_mode = 1  
         self.initUI()
         
     def initUI(self):
@@ -99,6 +100,13 @@ class MainApp(QMainWindow):
         clear_match_act.setStatusTip('Clear all search results')
         clear_match_act.triggered.connect(self.clearSearch)
 
+        #toggle case sensitivity
+        self.case_act = QAction(QIcon('..\images\case.png'), 'Toggle Case Sensitive Match', 
+                           self, checkable=True)
+        self.case_act.setChecked(False)                           
+        self.case_act.setStatusTip('Toggle case sensitive matching')
+        self.case_act.triggered.connect(self.toggleCase)
+
         # quit
         exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
@@ -155,10 +163,12 @@ class MainApp(QMainWindow):
         self.searchmode.addItem('Highlight Results')        
         self.searchmode.addItem('Filter Results')
         self.searchmode.currentIndexChanged.connect(self.searchModeChanged)
-
+        
         self.toolbar_search.addWidget(searchbox_lbl)
         self.toolbar_search.addWidget(self.searchbox)
         self.toolbar_search.addWidget(self.searchmode)
+        self.toolbar_search.addAction(self.case_act)        
+        self.toolbar_search.addSeparator()        
         self.toolbar_search.addAction(prev_match_act)  
         self.toolbar_search.addAction(next_match_act)
         self.toolbar_search.addAction(clear_match_act)
@@ -411,7 +421,7 @@ class MainApp(QMainWindow):
         
         # initialise progress bar
         self.progress_bar = QProgressBar(self)
-        self.progress_bar.setMaximumWidth(300)
+        self.progress_bar.setMaximumWidth(250)
         self.progress_bar.setMaximumHeight(17)
 
         # update status bar
@@ -879,6 +889,13 @@ class MainApp(QMainWindow):
             self.display_mode = 0
 
 
+    def toggleCase(self):
+        if self.case_act.isChecked() == True:
+            self.case_mode = 0
+        else:
+            self.case_mode = 1
+            
+
     def resizeColumns(self):
         self.entry_table.resizeColumnsToContents()
         # overwrite URL column sizing
@@ -922,7 +939,10 @@ class MainApp(QMainWindow):
         # remove any previous search highlights
         self.clearSearch()
 
-        search_string = str(self.searchbox.text()).lower()
+        if self.case_mode == 1:
+            search_string = str(self.searchbox.text()).lower()
+        else:
+            search_string = str(self.searchbox.text())            
 
         # if search string is blank clear out the ordered list of highligted rows
         if search_string == '':
@@ -938,32 +958,60 @@ class MainApp(QMainWindow):
         # and find the UID in the table to get the QTableWidgetItem object
 
         for key, value in self.request_headers_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.request_body_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.request_cookies_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
-        
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+
         for key, value in self.request_queries_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.response_headers_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.response_body_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
         
         for key, value in self.response_cookies_dict.items():
-            if search_string in str(value).lower():
-                matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            if self.case_mode == 1:
+                if search_string in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, Qt.MatchContains))
 
         # look for any entry table rows which contain the search string and 
         # get the QTableWidgetItem object
