@@ -94,10 +94,16 @@ class MainApp(QMainWindow):
         next_match_act.triggered.connect(self.nextMatch)
 
         #next match request
-        next_match_request_act = QAction(QIcon('..\images\\forward.png'), 'Next match', self)
+        next_match_request_act = QAction(QIcon('..\images\\forward.png'), 'Next match Request', self)
         next_match_request_act.setStatusTip('Goto next match')
         next_match_request_act.setShortcut('F5')
         next_match_request_act.triggered.connect(self.nextMatchRequest)
+
+        #next match response
+        next_match_response_act = QAction(QIcon('..\images\\forward.png'), 'Next match Response', self)
+        next_match_response_act.setStatusTip('Goto next match')
+        next_match_response_act.setShortcut('F6')
+        next_match_response_act.triggered.connect(self.nextMatchResponse)
 
         #previous match
         prev_match_act = QAction(QIcon('..\images\\backward.png'), '&Previous match', self)
@@ -180,11 +186,11 @@ class MainApp(QMainWindow):
         self.toolbar_search.addWidget(self.searchmode)
         self.toolbar_search.addAction(self.case_act)        
         self.toolbar_search.addSeparator()        
-        self.toolbar_search.addAction(prev_match_act)  
+        self.toolbar_search.addAction(prev_match_act)
         self.toolbar_search.addAction(next_match_act)
         self.toolbar_search.addAction(clear_match_act)
         self.toolbar_search.addAction(next_match_request_act)
-        
+        self.toolbar_search.addAction(next_match_response_act)
 
         # ---------------------------------------------------------
         # STATUSBAR
@@ -280,15 +286,15 @@ class MainApp(QMainWindow):
         # RESPONSES TAB
         # ---------------------------------------------------------
         
-        response_tabs = QTabWidget()
+        self.response_tabs = QTabWidget()
 
         response_headers_tab = QWidget()
         response_body_tab = QWidget()
         response_cookie_tab = QWidget()
 
-        response_tabs.addTab(response_headers_tab, 'Headers')
-        response_tabs.addTab(response_body_tab, 'Body')
-        response_tabs.addTab(response_cookie_tab, 'Cookies')
+        self.response_tabs.addTab(response_headers_tab, 'Headers')
+        self.response_tabs.addTab(response_body_tab, 'Body')
+        self.response_tabs.addTab(response_cookie_tab, 'Cookies')
 
         self.response_headers_tab_text = QTextEdit()
         self.response_body_tab_text = QTextEdit()
@@ -338,7 +344,7 @@ class MainApp(QMainWindow):
         request_vbox.addWidget(self.request_tabs)
         request_vbox.addWidget(self.request_searchbox)
 
-        response_vbox.addWidget(response_tabs)
+        response_vbox.addWidget(self.response_tabs)
         response_vbox.addWidget(self.response_searchbox)
 
         request_group_box = QGroupBox(title='Requests')
@@ -1215,6 +1221,8 @@ class MainApp(QMainWindow):
 
         active_tab = self.request_tabs.currentIndex()
 
+        print('test')
+
         # get active QTextEdit object
         if active_tab == 0:
             active_qtextedit = self.request_headers_tab_text
@@ -1269,7 +1277,7 @@ class MainApp(QMainWindow):
         self.current_index = 0
 
         # clear previous searches
-        self.clearSearchRequest()
+        self.clearSearchResponse()
 
         find_flags = QTextDocument.FindFlags()
         
@@ -1278,24 +1286,22 @@ class MainApp(QMainWindow):
             find_flags = QTextDocument.FindCaseSensitively
             
         # search string
-        search_string = str(self.request_searchbox.text())
+        search_string = str(self.response_searchbox.text())
 
         if search_string == '':
-            self.clearSearchRequest()
+            self.clearSearchResponse()
             return()
 
         # get active request tab
-        active_tab = self.request_tabs.currentIndex()
+        active_tab = self.response_tabs.currentIndex()
 
         # get active QTextEdit object
         if active_tab == 0:
-            active_qtextedit = self.request_headers_tab_text
+            active_qtextedit = self.response_headers_tab_text
         elif active_tab == 1:
-            active_qtextedit = self.request_body_tab_text
+            active_qtextedit = self.response_body_tab_text
         elif active_tab == 2:
-            active_qtextedit = self.request_query_tab_text
-        elif active_tab == 3:
-            active_qtextedit = self.request_cookie_tab_text            
+            active_qtextedit = self.response_cookie_tab_text      
 
         highlight_style = QTextCharFormat()
         highlight_style.setBackground(QBrush(QColor(255, 255, 128)))
@@ -1317,6 +1323,55 @@ class MainApp(QMainWindow):
 
         self.status_bar.showMessage('Search Complete. Found {} Matches'.format(len(self.cursor_locations)))
         
+
+    def nextMatchResponse(self):
+
+        active_tab = self.response_tabs.currentIndex()
+
+        # get active QTextEdit object
+        if active_tab == 0:
+            active_qtextedit = self.response_headers_tab_text
+        elif active_tab == 1:
+            active_qtextedit = self.response_body_tab_text
+        elif active_tab == 2:
+            active_qtextedit = self.response_cookie_tab_text
+
+        if len(self.cursor_locations) > 0:
+            active_qtextedit.setTextCursor(self.cursor_locations[self.current_index])
+            if len(self.cursor_locations) - 1 == self.current_index:
+                self.current_index = 0
+            else:
+                self.current_index += 1
+
+
+    def clearSearchResponse(self):
+
+        # get active request tab
+        active_tab = self.response_tabs.currentIndex()
+
+        # get active QTextEdit object
+        if active_tab == 0:
+            active_qtextedit = self.response_headers_tab_text
+        elif active_tab == 1:
+            active_qtextedit = self.response_body_tab_text
+        elif active_tab == 2:
+            active_qtextedit = self.response_cookie_tab_text
+
+        highlight_style = QTextCharFormat()
+        highlight_style.setBackground(QBrush(QColor(255, 255, 255)))
+
+        old_cursor = active_qtextedit.textCursor()
+        active_qtextedit.selectAll()
+        cursor = active_qtextedit.textCursor()
+        cursor.mergeCharFormat(highlight_style)
+
+        # reset the cursor
+        active_qtextedit.moveCursor(QTextCursor.Start)
+        
+        # clear old cursor locations
+        self.cursor_locations = []
+        self.status_bar.clearMessage()
+
 
 class TableWidgetItem(QTableWidgetItem):
     def __init__(self, text, sortKey):
