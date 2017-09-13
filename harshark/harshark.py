@@ -395,7 +395,7 @@ class MainApp(QMainWindow):
         # app title
         self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.4')
         # app icon
-        self.setWindowIcon(QIcon('..\images\logo2.png'))
+        self.setWindowIcon(QIcon('..\images\logo.png'))
         # display the app
         self.show()
 
