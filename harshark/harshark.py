@@ -3,6 +3,7 @@ import random
 import string
 import sys
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QFont
@@ -160,7 +161,10 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         
         self.toolbar_actions = self.addToolBar('Tools')
-        self.toolbar_search = self.addToolBar('Search & Filter')  
+        self.toolbar_search = self.addToolBar('Search & Filter')
+
+        self.toolbar_actions.setIconSize(QSize(20, 20))
+        self.toolbar_search.setIconSize(QSize(20, 20))
                
         self.toolbar_search.setFloatable(False)
         self.toolbar_actions.setFloatable(False)
@@ -378,6 +382,8 @@ class MainApp(QMainWindow):
         splitter_ver = QSplitter(Qt.Vertical)
         splitter_ver.addWidget(self.entry_table)
         splitter_ver.addWidget(splitter_hor)
+        splitter_ver.setStretchFactor(0, 2)
+        splitter_ver.setStretchFactor(1, 1)        
 
         self.setCentralWidget(splitter_ver)
 
