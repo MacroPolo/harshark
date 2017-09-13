@@ -1180,11 +1180,14 @@ class MainApp(QMainWindow):
 
     def searchRequest(self):
 
+        # clear previous searches
+        self.clearSearchRequest()
+
         # set current index for stepping through results
         self.current_index = 0
 
-        # clear previous searches
-        self.clearSearchRequest()
+        # store the requests tab the search was performed on
+        self.active_request_tab = self.request_tabs.currentIndex()
 
         find_flags = QTextDocument.FindFlags()
         
@@ -1237,6 +1240,11 @@ class MainApp(QMainWindow):
 
         active_tab = self.request_tabs.currentIndex()
 
+        # do nothing if user tries to skip forward on a tab other than the
+        # one the search was performed on
+        if self.active_request_tab != active_tab:
+            return()
+
         # get active QTextEdit object
         if active_tab == 0:
             active_qtextedit = self.request_headers_tab_text
@@ -1287,12 +1295,16 @@ class MainApp(QMainWindow):
         
 
     def searchResponse(self):
-        # set current index for stepping through results
-        self.current_index = 0
 
         # clear previous searches
         self.clearSearchResponse()
 
+        # set current index for stepping through results
+        self.current_index = 0
+
+        # store the response tab the search was performed on
+        self.active_response_tabs = self.response_tabs.currentIndex()
+        
         find_flags = QTextDocument.FindFlags()
         
         # check for case sensitive matching mode
@@ -1341,6 +1353,11 @@ class MainApp(QMainWindow):
     def nextMatchResponse(self):
 
         active_tab = self.response_tabs.currentIndex()
+
+        # do nothing if user tries to skip forward on a tab other than the
+        # one the search was performed on
+        if self.active_response_tabs != active_tab:
+            return()
 
         # get active QTextEdit object
         if active_tab == 0:
