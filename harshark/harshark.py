@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import qApp
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QColorDialog
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QGroupBox
@@ -25,6 +26,8 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtWidgets import QSplitter
 from PyQt5.QtWidgets import QTabWidget
 from PyQt5.QtWidgets import QTableWidget
@@ -32,8 +35,18 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtWidgets import QShortcut
-from PyQt5.QtWidgets import QColorDialog
+
+
+class TableWidgetItem(QTableWidgetItem):
+    def __init__(self, text, sortKey):
+        QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
+        self.sortKey = sortKey
+
+    def __lt__(self, other):
+        try:
+            return self.sortKey < other.sortKey
+        except TypeError:
+            return -1
 
 
 class MainApp(QMainWindow):
@@ -83,7 +96,7 @@ class MainApp(QMainWindow):
 
         #font choice
         font_act = QAction(QIcon('..\images\\font.png'), 'Choose &Font...', self)
-        font_act.setStatusTip('Choose the font used to display HAR data')        
+        font_act.setStatusTip('Choose the main display font')        
         font_act.triggered.connect(self.changeFont)
 
         #highlight colour choice
@@ -99,7 +112,7 @@ class MainApp(QMainWindow):
 
         #expand
         expand_act = QAction(QIcon('..\images\expand.png'), 'Display all Body Content', self)
-        expand_act.setStatusTip('Display all body content for this request/response')
+        expand_act.setStatusTip('Display all body content for the selected request/response')
         expand_act.setShortcut('Ctrl+X')
         expand_act.triggered.connect(self.expandBody)
 
@@ -140,6 +153,11 @@ class MainApp(QMainWindow):
         wordwrap_act.setStatusTip('Toggle word wrap')
         wordwrap_act.setShortcut('Ctrl+W')
         wordwrap_act.triggered.connect(self.toggleWordWrap)
+
+        #about popup
+        about_act = QAction(QIcon('..\images\\about.png'), 'About', self)
+        about_act.setStatusTip('Information about Harshark')
+        about_act.triggered.connect(self.aboutPopup)
         
         # ---------------------------------------------------------
         # MAIN MENU
@@ -149,12 +167,15 @@ class MainApp(QMainWindow):
 
         file_menu = menu_bar.addMenu('&File')
         options_menu = menu_bar.addMenu('&Options')
-      
+        help_menu = menu_bar.addMenu('&Help')
+
         file_menu.addAction(open_act)
         file_menu.addAction(exit_act)
 
         options_menu.addAction(font_act)
         options_menu.addAction(colour_act)
+
+        help_menu.addAction(about_act)
         
         # ---------------------------------------------------------
         # TOOLBARS
@@ -181,9 +202,9 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(open_act)
         self.toolbar_actions.addSeparator()
         self.toolbar_actions.addAction(delete_act)
-        self.toolbar_actions.addAction(expand_act)
         self.toolbar_actions.addAction(resize_col_act)
         self.toolbar_actions.addAction(wordwrap_act)
+        self.toolbar_actions.addAction(expand_act)        
         self.toolbar_actions.addSeparator()
         self.toolbar_actions.addWidget(display_mode_lbl)
         self.toolbar_actions.addWidget(self.displaymode)
@@ -365,10 +386,10 @@ class MainApp(QMainWindow):
         response_vbox.addWidget(self.response_tabs)
         response_vbox.addWidget(self.response_searchbox)
 
-        request_group_box = QGroupBox(title='Requests')
+        request_group_box = QGroupBox(title='Request')
         request_group_box.setLayout(request_vbox)
 
-        response_group_box = QGroupBox(title='Responses')
+        response_group_box = QGroupBox(title='Response')
         response_group_box.setLayout(response_vbox)
 
         # ---------------------------------------------------------
@@ -393,37 +414,19 @@ class MainApp(QMainWindow):
         
         self.showMaximized()
         # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v0.4')
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v1.0')
         # app icon
         self.setWindowIcon(QIcon('..\images\logo.png'))
         # display the app
         self.show()
 
 
-    def openFile(self):
-        file_name = QFileDialog.getOpenFileName(self, 'Open file')
-        file_name = file_name[0]
-        
-        # no file selected
-        if file_name == '':
-            return()
-        else:
-        # load the HAR file
-            try:
-                with open(file_name, encoding='utf-8') as har:
-                    self.har = json.load(har)
-                    self.harParse()
-            except json.decoder.JSONDecodeError:
-                self.status_bar.removeWidget(self.progress_bar)
-                self.status_bar.showMessage('Invalid file')
-                return()
-
-
     def harCheck(self):
+        """HAR file validation: Check if the file contains a non-zero size
+        'entries' stanza."""
         try:
             foo = self.har['log']['entries']
         except:
-            print('HAR file does not contain any entries')
             self.status_bar.removeWidget(self.progress_bar)
             self.status_bar.showMessage('HAR file contains no entries!')
             return(-1)
@@ -434,7 +437,7 @@ class MainApp(QMainWindow):
 
 
     def harParse(self):
-
+        """Extract interesting data from the HAR file"""
         # initalise dictionaries used to store entry details
         self.request_headers_dict = {}
         self.request_body_dict = {}
@@ -595,7 +598,7 @@ class MainApp(QMainWindow):
 
                 # if this column is a numeric column, sort numerically
                 if j in numeric_columns:
-                    # truncate any decimal 
+                    # truncate any decimals on 'time' column
                     if j == 2:
                         item = TableWidgetItem(str(int(item)), item)
                         self.entry_table.setItem(i, j, item)
@@ -638,7 +641,7 @@ class MainApp(QMainWindow):
             except:
                 self.response_cookies_dict[id] = ''
 
-        # update the statusbar on success
+        # update the statusbar
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
         self.status_bar.showMessage('HAR loaded sucessfully')
@@ -650,6 +653,26 @@ class MainApp(QMainWindow):
         self.resizeColumns()
 
 
+    def openFile(self):
+        """File open dialog window"""
+        file_name = QFileDialog.getOpenFileName(self, 'Open file')
+        file_name = file_name[0]
+        
+        # no file selected
+        if file_name == '':
+            return()
+        else:
+        # load the HAR file
+            try:
+                with open(file_name, encoding='utf-8') as har:
+                    self.har = json.load(har)
+                    self.harParse()
+            except json.decoder.JSONDecodeError:
+                self.status_bar.removeWidget(self.progress_bar)
+                self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
+                return()
+
+
     def deleteRow(self):
         """delete the selected rows from the requests table when hitting the 
         'delete' key
@@ -657,7 +680,7 @@ class MainApp(QMainWindow):
         all_selection_groups = self.entry_table.selectedRanges()
         # count number of row selection groups
         number_of_selection_groups = len(all_selection_groups)
-        # for each row selection group
+        # for each row selection group (reverse)
         for i in range(number_of_selection_groups, 0, -1):
             # index into this row selection group
             selRange  = all_selection_groups[number_of_selection_groups - 1]
@@ -673,17 +696,18 @@ class MainApp(QMainWindow):
         
 
     def selectRow(self):
-
-        # catch when all rows have been deleted
+        """Populate the request and response details panels when clicking
+        on a row in the entries table."""
+        # do nothing when there are no rows
         if self.entry_table.currentRow() == -1:
             return
 
-        # number of characters to truncate large response bodies to
+        # number of characters to truncate large body content to
         truncate_size = 2000
 
         # response body mime-types which will be displayed
         body_safelist = [
-                'text', 
+                'text',
                 'html',
                 'css',
                 'json',
@@ -696,7 +720,7 @@ class MainApp(QMainWindow):
         # cookie store
         cookie_list = []
 
-        # newline name value style
+        # display styles for request/response panels
         data_styles = ['<b>{}</b><br>{}<br>', '<b>{}</b>: {}']
         active_style = data_styles[self.display_mode]
 
@@ -720,8 +744,8 @@ class MainApp(QMainWindow):
             entry = active_style.format(item['name'], item['value'])
             self.request_headers_tab_text.append(entry)
 
-            # parse the 'cookie' header in request header if they haven't 
-            # been split out into the 'cookies' key in the HAR file
+            # get cookie details directly from the cookie header if there isn't
+            # a nice cookie stanza included in the HAR capture
             if not request_cookies:
                 if item['name'] == 'Cookie' or item['name'] == 'cookie':
                     cookie_header = item['value'].split(';')
@@ -761,8 +785,8 @@ class MainApp(QMainWindow):
             entry = active_style.format(item['name'], item['value'])
             self.response_headers_tab_text.append(entry)
 
-            # parse the 'set-cookie' header in response header if they haven't 
-            # been split out into the 'cookies' key in the HAR file
+            # get cookie details directly from the set-cookie header if there 
+            # isn't a nice cookie stanza included in the HAR capture
             if not response_cookies:
                 if item['name'] == 'Set-Cookie' or item['name'] == 'set-cookie':
                     cookie_header = item['value'].split('\n')
@@ -867,6 +891,7 @@ class MainApp(QMainWindow):
 
 
     def scrollTextEdit(self):
+        """Move scrollbar to the top for all QTextEdit widgets."""
         self.request_headers_tab_text.moveCursor(QTextCursor.Start)
         self.request_body_tab_text.moveCursor(QTextCursor.Start)
         self.request_query_tab_text.moveCursor(QTextCursor.Start)
@@ -877,7 +902,8 @@ class MainApp(QMainWindow):
                 
     
     def expandBody(self):
-
+        """If request/response body has been truncated, use Ctrl+X to 
+        show the full text."""
         # if all rows have been removed from entries table do nothing
         if self.entry_table.currentRow() == -1:
             return
@@ -904,6 +930,7 @@ class MainApp(QMainWindow):
         
 
     def changeFont(self):
+        """Change the font used by Harshark."""
         font, valid = QFontDialog.getFont()
         if valid:
             self.entry_table.setFont(font)         
@@ -917,10 +944,12 @@ class MainApp(QMainWindow):
 
 
     def changeHighlight(self):
+        """Change the colour used to highlight search matches."""
         self.chosen_colour = QColorDialog.getColor()
         
         
     def searchModeChanged(self):
+        """Set the search mode (highlight or filter)."""
         current_search_mode = self.searchmode.currentText()
         if current_search_mode == 'Highlight Results':
             self.search_mode = 1
@@ -929,6 +958,7 @@ class MainApp(QMainWindow):
 
 
     def displayModeChanged(self):
+        """Set the display mode (inline or newline)."""
         current_display_mode = self.displaymode.currentText()
         if current_display_mode == 'Compact':
             self.display_mode = 1
@@ -937,6 +967,7 @@ class MainApp(QMainWindow):
 
 
     def toggleCase(self):
+        """Set the case sensitivity mode for searching."""
         if self.case_act.isChecked() == True:
             self.case_mode = 0
         else:
@@ -944,13 +975,14 @@ class MainApp(QMainWindow):
             
 
     def resizeColumns(self):
+        """Resize all columns to fit - URL fixed width."""
         self.entry_table.resizeColumnsToContents()
         # overwrite URL column sizing
         self.entry_table.setColumnWidth(5, 800)
 
 
     def toggleWordWrap(self):
-
+        """Set word wrap on/off for requests and response tabs."""
         wr_mode = self.request_headers_tab_text.wordWrapMode()
 
         if wr_mode == 4:
@@ -972,6 +1004,7 @@ class MainApp(QMainWindow):
 
 
     def clearTextEdit(self):
+        """Clear the request/response tabs."""
         self.request_headers_tab_text.setPlainText('')
         self.request_body_tab_text.setPlainText('')
         self.request_query_tab_text.setPlainText('')
@@ -982,7 +1015,7 @@ class MainApp(QMainWindow):
 
     
     def searchEntries(self):
-
+        """Search the main entries table."""
         # remove any previous search highlights
         self.clearSearch()
 
@@ -997,7 +1030,6 @@ class MainApp(QMainWindow):
         search_string = str(self.searchbox.text())
 
         # if search string is blank clear out the ordered list of highligted rows
-        
         if search_string == '':
             self.matched_ordered = []
             return()
@@ -1067,7 +1099,7 @@ class MainApp(QMainWindow):
 
         matched_rows = []
 
-        # get the table row for each QTableWidgetItem object
+        # get the table row for each matched QTableWidgetItem object
         if len(matched_items) > 0:
             for item in matched_items:
                 matched_rows.append(self.entry_table.row(item))
@@ -1104,6 +1136,7 @@ class MainApp(QMainWindow):
 
 
     def clearSearch(self):
+        """Remove any highlight or filter from the entries table."""
         column_count = self.entry_table.columnCount()
         row_count = self.entry_table.rowCount()
 
@@ -1117,7 +1150,7 @@ class MainApp(QMainWindow):
 
 
     def previousMatch(self):
-        
+        """Skip back to the previous search match in the entries table."""
         # do nothing if there is there is no matches in the list or if
         # the list hasn't even been initalised (no HAR loaded)
         try:
@@ -1151,7 +1184,7 @@ class MainApp(QMainWindow):
 
 
     def nextMatch(self):
-
+        """Skip forward to the next search match in the entries table."""
         # do nothing if there is there is no matches in the list or if
         # the list hasn't even been initalised (no HAR loaded)
         try:
@@ -1185,7 +1218,7 @@ class MainApp(QMainWindow):
 
 
     def searchRequest(self):
-
+        """Search in the active requests tab."""
         # clear previous searches
         self.clearSearchRequest()
 
@@ -1229,6 +1262,7 @@ class MainApp(QMainWindow):
         # move cursor to the start of the QTextEdit box
         active_qtextedit.moveCursor(QTextCursor.Start)
 
+        # for each match, update the style of the selection
         while True:
             matches = active_qtextedit.find(search_string, find_flags)
             if matches:
@@ -1239,15 +1273,15 @@ class MainApp(QMainWindow):
             else:
                 break
 
-        self.status_bar.showMessage('Search Complete. Found {} Matches'.format(len(self.cursor_locations)))
+        self.status_bar.showMessage('Search Complete : {} Matches'.format(len(self.cursor_locations)))
     
     
     def nextMatchRequest(self):
-
+        """Skip to the next search match in the active request tab."""
         active_tab = self.request_tabs.currentIndex()
 
         # do nothing if user tries to skip forward on a tab other than the
-        # one the search was performed on
+        # one the latest search was performed on
         if self.active_request_tab != active_tab:
             return()
 
@@ -1270,7 +1304,7 @@ class MainApp(QMainWindow):
 
     
     def clearSearchRequest(self):
-
+        """Clear any search highlights from the active request tab."""
         # get active request tab
         active_tab = self.request_tabs.currentIndex()
 
@@ -1301,7 +1335,7 @@ class MainApp(QMainWindow):
         
 
     def searchResponse(self):
-
+        """Search in the active response tab."""
         # clear previous searches
         self.clearSearchResponse()
 
@@ -1353,11 +1387,11 @@ class MainApp(QMainWindow):
             else:
                 break
 
-        self.status_bar.showMessage('Search Complete. Found {} Matches'.format(len(self.cursor_locations)))
+        self.status_bar.showMessage('Search Complete : {} Matches'.format(len(self.cursor_locations)))
         
 
     def nextMatchResponse(self):
-
+        """Skip to the next search match in the active request tab."""
         active_tab = self.response_tabs.currentIndex()
 
         # do nothing if user tries to skip forward on a tab other than the
@@ -1382,7 +1416,7 @@ class MainApp(QMainWindow):
 
 
     def clearSearchResponse(self):
-
+        """Clear any search highlights from the active request tab."""
         # get active request tab
         active_tab = self.response_tabs.currentIndex()
 
@@ -1410,17 +1444,14 @@ class MainApp(QMainWindow):
         self.status_bar.clearMessage()
 
 
-class TableWidgetItem(QTableWidgetItem):
-    def __init__(self, text, sortKey):
-        QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
-        self.sortKey = sortKey
-
-    def __lt__(self, other):
-        try:
-            return self.sortKey < other.sortKey
-        except TypeError:
-            return -1
-
+    def aboutPopup(self):
+        """About Harshark popup dialog."""
+        about_msg = QMessageBox()
+        about_msg.setIcon(QMessageBox.Information)
+        about_msg.setWindowTitle("About Harshark")        
+        about_msg.setText('Harshark Version 1.0\n\nCopyright © 2017 Mark Riddell')
+        about_msg.setInformativeText("Sofware licensed under the MIT License.")
+        about_msg.exec_()
 
 def main():
     app = QApplication(sys.argv)
