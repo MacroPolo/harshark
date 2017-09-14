@@ -1,3 +1,4 @@
+import io
 import json
 import random
 import string
@@ -664,11 +665,10 @@ class MainApp(QMainWindow):
         else:
         # load the HAR file
             try:
-                with open(file_name, encoding='utf-8') as har:
+                with open(file_name, encoding='utf-8-sig') as har:
                     self.har = json.load(har)
                     self.harParse()
             except json.decoder.JSONDecodeError:
-                self.status_bar.removeWidget(self.progress_bar)
                 self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
                 return()
 
