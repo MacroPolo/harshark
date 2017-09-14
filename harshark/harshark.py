@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import random
 import string
 import sys
@@ -80,75 +81,94 @@ class MainApp(QMainWindow):
         self.sc_next_match_response.activated.connect(self.nextMatchResponse)
 
         # ---------------------------------------------------------
+        # ICONS
+        # ---------------------------------------------------------
+
+        logo_icon = os.path.join('..', 'icons', 'harshark.png')
+        about_icon = os.path.join('..', 'icons', 'about.png')
+        backward_icon = os.path.join('..', 'icons', 'backward.png')
+        case_icon = os.path.join('..', 'icons', 'case.png')
+        colour_icon = os.path.join('..', 'icons', 'colour.png')
+        delete_icon = os.path.join('..', 'icons', 'delete.png')
+        exit_icon = os.path.join('..', 'icons', 'exit.png')
+        expand_icon = os.path.join('..', 'icons', 'expand.png')
+        font_icon = os.path.join('..', 'icons', 'font.png')
+        forward_icon = os.path.join('..', 'icons', 'forward.png')
+        open_icon = os.path.join('..', 'icons', 'open.png')
+        remove_icon = os.path.join('..', 'icons', 'remove.png')
+        resize_icon = os.path.join('..', 'icons', 'resize.png')
+        wrap_icon = os.path.join('..', 'icons', 'wrap.png')
+        
+        # ---------------------------------------------------------
         # ACTIONS
         # ---------------------------------------------------------
 
         # open
-        open_act = QAction(QIcon('..\images\open.png'), '&Open', self)
+        open_act = QAction(QIcon(open_icon), '&Open', self)
         open_act.setShortcut('Ctrl+O')
         open_act.setStatusTip('Open a new HAR file')
         open_act.triggered.connect(self.openFile)
 
         # quit
-        exit_act = QAction(QIcon('..\images\exit.png'), '&Exit', self)
+        exit_act = QAction(QIcon(exit_icon), '&Exit', self)
         exit_act.setShortcut('Ctrl+Q')
         exit_act.setStatusTip('Exit Harshark')
         exit_act.triggered.connect(qApp.quit)
 
         #font choice
-        font_act = QAction(QIcon('..\images\\font.png'), 'Choose &Font...', self)
+        font_act = QAction(QIcon(font_icon), 'Choose &Font...', self)
         font_act.setStatusTip('Choose the main display font')        
         font_act.triggered.connect(self.changeFont)
 
         #highlight colour choice
-        colour_act = QAction(QIcon('..\images\\colour.png'), 'Choose &Highlight Colour...', self)
+        colour_act = QAction(QIcon(colour_icon), 'Choose &Highlight Colour...', self)
         colour_act.setStatusTip('Choose the colour used to highlight search matches')        
         colour_act.triggered.connect(self.changeHighlight)
         
         #delete
-        delete_act = QAction(QIcon('..\images\delete.png'), 'Delete Row', self)
+        delete_act = QAction(QIcon(delete_icon), 'Delete Row', self)
         delete_act.setStatusTip('Delete the selected requests')
         delete_act.setShortcut('Delete')
         delete_act.triggered.connect(self.deleteRow)
 
         #expand
-        expand_act = QAction(QIcon('..\images\expand.png'), 'Display all Body Content', self)
+        expand_act = QAction(QIcon(expand_icon), 'Display all Body Content', self)
         expand_act.setStatusTip('Display all body content for the selected request/response')
         expand_act.setShortcut('Ctrl+X')
         expand_act.triggered.connect(self.expandBody)
 
         #resize columns to fit
-        resize_col_act = QAction(QIcon('..\images\\resize.png'), 'Resize Columns to Fit', self)
+        resize_col_act = QAction(QIcon(resize_icon), 'Resize Columns to Fit', self)
         resize_col_act.setStatusTip('Resize all columns to fit')
         resize_col_act.setShortcut('Ctrl+R')
         resize_col_act.triggered.connect(self.resizeColumns)
 
         #next match
-        next_match_act = QAction(QIcon('..\images\\forward.png'), 'Next match', self)
+        next_match_act = QAction(QIcon(forward_icon), 'Next match', self)
         next_match_act.setStatusTip('Go to next match')
         next_match_act.setShortcut('F3')
         next_match_act.triggered.connect(self.nextMatch)
 
         #previous match
-        prev_match_act = QAction(QIcon('..\images\\backward.png'), 'Previous match', self)
+        prev_match_act = QAction(QIcon(backward_icon), 'Previous match', self)
         prev_match_act.setStatusTip('Go to previous match')
         prev_match_act.setShortcut('F4')
         prev_match_act.triggered.connect(self.previousMatch)
 
         #clear matches
-        clear_match_act = QAction(QIcon('..\images\\remove.png'), 'Clear Search Results', self)
+        clear_match_act = QAction(QIcon(remove_icon), 'Clear Search Results', self)
         clear_match_act.setStatusTip('Clear all search results')
         clear_match_act.triggered.connect(self.clearSearch)
 
         #toggle case sensitivity
-        self.case_act = QAction(QIcon('..\images\case.png'), 'Toggle Case Sensitive Matching', 
+        self.case_act = QAction(QIcon(case_icon), 'Toggle Case Sensitive Matching', 
                            self, checkable=True)
         self.case_act.setChecked(False)                           
         self.case_act.setStatusTip('Toggle case sensitive matching')
         self.case_act.triggered.connect(self.toggleCase)
 
         #toggle wordwrap
-        wordwrap_act = QAction(QIcon('..\images\\wrap.png'), 'Toogle Word Wrap', 
+        wordwrap_act = QAction(QIcon(wrap_icon), 'Toogle Word Wrap', 
                                self, checkable=True)
         wordwrap_act.setChecked(True)
         wordwrap_act.setStatusTip('Toggle word wrap')
@@ -156,7 +176,7 @@ class MainApp(QMainWindow):
         wordwrap_act.triggered.connect(self.toggleWordWrap)
 
         #about popup
-        about_act = QAction(QIcon('..\images\\about.png'), 'About', self)
+        about_act = QAction(QIcon(about_icon), 'About', self)
         about_act.setStatusTip('Information about Harshark')
         about_act.triggered.connect(self.aboutPopup)
         
@@ -417,7 +437,7 @@ class MainApp(QMainWindow):
         # app title
         self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v1.0')
         # app icon
-        self.setWindowIcon(QIcon('..\images\logo.png'))
+        self.setWindowIcon(QIcon(logo_icon))
         # display the app
         self.show()
 
@@ -478,7 +498,7 @@ class MainApp(QMainWindow):
         # make sure we have some entries in the HAR
         har_status = self.harCheck()
         if har_status == -1:
-            return()
+            return
    
         # for each entry in the HAR file
         for i, entry in enumerate(self.har['log']['entries']):
@@ -661,7 +681,7 @@ class MainApp(QMainWindow):
         
         # no file selected
         if file_name == '':
-            return()
+            return
         else:
         # load the HAR file
             try:
@@ -670,7 +690,7 @@ class MainApp(QMainWindow):
                     self.harParse()
             except json.decoder.JSONDecodeError:
                 self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
-                return()
+                return
 
 
     def deleteRow(self):
@@ -1016,6 +1036,12 @@ class MainApp(QMainWindow):
     
     def searchEntries(self):
         """Search the main entries table."""
+
+        # if there aren't any rows in the table do nothing
+        row_count = self.entry_table.rowCount()
+        if row_count == 0:
+            return
+
         # remove any previous search highlights
         self.clearSearch()
 
@@ -1032,7 +1058,7 @@ class MainApp(QMainWindow):
         # if search string is blank clear out the ordered list of highligted rows
         if search_string == '':
             self.matched_ordered = []
-            return()
+            return
 
         column_count = self.entry_table.columnCount()
         row_count = self.entry_table.rowCount()
@@ -1108,7 +1134,7 @@ class MainApp(QMainWindow):
             self.status_bar.showMessage('No matches found')
             self.clearSearch()
             self.matched_ordered = []
-            return()
+            return
 
         matched_rows = list(set(matched_rows))
 
@@ -1155,9 +1181,9 @@ class MainApp(QMainWindow):
         # the list hasn't even been initalised (no HAR loaded)
         try:
             if self.matched_ordered == []:
-                return()
+                return
         except AttributeError:
-            return()
+            return
 
         # get current selected row
         current_row = self.entry_table.currentRow()
@@ -1189,9 +1215,9 @@ class MainApp(QMainWindow):
         # the list hasn't even been initalised (no HAR loaded)
         try:
             if self.matched_ordered == []:
-                return()
+                return
         except AttributeError:
-            return()
+            return
 
         # get current selected row
         current_row = self.entry_table.currentRow()
@@ -1239,7 +1265,7 @@ class MainApp(QMainWindow):
 
         if search_string == '':
             self.clearSearchRequest()
-            return()
+            return
 
         # get active request tab
         active_tab = self.request_tabs.currentIndex()
@@ -1283,7 +1309,7 @@ class MainApp(QMainWindow):
         # do nothing if user tries to skip forward on a tab other than the
         # one the latest search was performed on
         if self.active_request_tab != active_tab:
-            return()
+            return
 
         # get active QTextEdit object
         if active_tab == 0:
@@ -1356,7 +1382,7 @@ class MainApp(QMainWindow):
 
         if search_string == '':
             self.clearSearchResponse()
-            return()
+            return
 
         # get active request tab
         active_tab = self.response_tabs.currentIndex()
@@ -1397,7 +1423,7 @@ class MainApp(QMainWindow):
         # do nothing if user tries to skip forward on a tab other than the
         # one the search was performed on
         if self.active_response_tabs != active_tab:
-            return()
+            return
 
         # get active QTextEdit object
         if active_tab == 0:
