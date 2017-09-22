@@ -87,20 +87,22 @@ class MainApp(QMainWindow):
         # ICONS
         # ---------------------------------------------------------
 
-        logo_icon = os.path.join('..', 'icons', 'harshark.png')
-        about_icon = os.path.join('..', 'icons', 'about.png')
-        backward_icon = os.path.join('..', 'icons', 'backward.png')
-        case_icon = os.path.join('..', 'icons', 'case.png')
-        colour_icon = os.path.join('..', 'icons', 'colour.png')
-        delete_icon = os.path.join('..', 'icons', 'delete.png')
-        exit_icon = os.path.join('..', 'icons', 'exit.png')
-        expand_icon = os.path.join('..', 'icons', 'expand.png')
-        font_icon = os.path.join('..', 'icons', 'font.png')
-        forward_icon = os.path.join('..', 'icons', 'forward.png')
-        open_icon = os.path.join('..', 'icons', 'open.png')
-        remove_icon = os.path.join('..', 'icons', 'remove.png')
-        resize_icon = os.path.join('..', 'icons', 'resize.png')
-        wrap_icon = os.path.join('..', 'icons', 'wrap.png')
+        cwd = os.path.dirname(__file__)
+
+        logo_icon = os.path.join(cwd, '..', 'icons', 'harshark.png')
+        about_icon = os.path.join(cwd, '..', 'icons', 'about.png')
+        backward_icon = os.path.join(cwd, '..', 'icons', 'backward.png')
+        case_icon = os.path.join(cwd, '..', 'icons', 'case.png')
+        colour_icon = os.path.join(cwd, '..', 'icons', 'colour.png')
+        delete_icon = os.path.join(cwd, '..', 'icons', 'delete.png')
+        exit_icon = os.path.join(cwd, '..', 'icons', 'exit.png')
+        expand_icon = os.path.join(cwd, '..', 'icons', 'expand.png')
+        font_icon = os.path.join(cwd, '..', 'icons', 'font.png')
+        forward_icon = os.path.join(cwd, '..', 'icons', 'forward.png')
+        open_icon = os.path.join(cwd, '..', 'icons', 'open.png')
+        remove_icon = os.path.join(cwd, '..', 'icons', 'remove.png')
+        resize_icon = os.path.join(cwd, '..', 'icons', 'resize.png')
+        wrap_icon = os.path.join(cwd, '..', 'icons', 'wrap.png')
         
         # ---------------------------------------------------------
         # ACTIONS
