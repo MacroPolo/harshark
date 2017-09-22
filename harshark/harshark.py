@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import io
 import json
 import os
@@ -1067,6 +1070,14 @@ class MainApp(QMainWindow):
 
         # look for tabs which contain the search string, grab the request UID
         # and find the UID in the table to get the QTableWidgetItem object
+
+        for key, value in self.request_headers_dict.items():
+            if self.case_mode == 1:
+                if search_string.lower() in str(value).lower():
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
+            else:
+                if search_string in str(value):
+                    matched_items.append(self.entry_table.findItems(key, find_flags))
      
         for key, value in self.request_body_dict.items():
             if self.case_mode == 1:
