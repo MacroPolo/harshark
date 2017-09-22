@@ -79,7 +79,7 @@ class MainApp(QMainWindow):
         self.sc_next_match_request = QShortcut(QKeySequence("F5"), self)
         self.sc_next_match_request.activated.connect(self.nextMatchRequest)
 
-        # F6 to loop through search results in request tabs        
+        # F6 to loop through search results in response tabs
         self.sc_next_match_response = QShortcut(QKeySequence("F6"), self)
         self.sc_next_match_response.activated.connect(self.nextMatchResponse)
 
@@ -120,12 +120,12 @@ class MainApp(QMainWindow):
 
         #font choice
         font_act = QAction(QIcon(font_icon), 'Choose &Font...', self)
-        font_act.setStatusTip('Choose the main display font')        
+        font_act.setStatusTip('Choose the main display font')
         font_act.triggered.connect(self.changeFont)
 
         #highlight colour choice
         colour_act = QAction(QIcon(colour_icon), 'Choose &Highlight Colour...', self)
-        colour_act.setStatusTip('Choose the colour used to highlight search matches')        
+        colour_act.setStatusTip('Choose the colour used to highlight search matches')
         colour_act.triggered.connect(self.changeHighlight)
         
         #delete
@@ -166,7 +166,7 @@ class MainApp(QMainWindow):
         #toggle case sensitivity
         self.case_act = QAction(QIcon(case_icon), 'Toggle Case Sensitive Matching', 
                            self, checkable=True)
-        self.case_act.setChecked(False)                           
+        self.case_act.setChecked(False)
         self.case_act.setStatusTip('Toggle case sensitive matching')
         self.case_act.triggered.connect(self.toggleCase)
 
