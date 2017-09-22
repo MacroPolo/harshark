@@ -273,7 +273,7 @@ class MainApp(QMainWindow):
                         'Request URL',
                         'Response Code',
                         'HTTP Version',
-                        'Mime Type',
+                        'MIME Type',
                         'Request Header Size',
                         'Request Body Size',
                         'Response Header Size',
