@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Harshark: A simple, offline HAR viewer.
+
+Usage:
+    $ python3 harshark.py
+
+    The user guide for Harshark can be found on the GitHub page at
+    https://github.com/MacroPolo/harshark
+
+Todo:
+    *
+    *
+    *
+
+"""
 
 import io
 import json
@@ -7,6 +21,7 @@ import os
 import random
 import string
 import sys
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QBrush
@@ -43,6 +58,7 @@ from PyQt5.QtWidgets import QWidget
 
 
 class TableWidgetItem(QTableWidgetItem):
+    """Reimplement QTableWidgetItem to allow numeric sorting of numeric columns."""
     def __init__(self, text, sortKey):
         QTableWidgetItem.__init__(self, text, QTableWidgetItem.UserType)
         self.sortKey = sortKey
@@ -55,22 +71,23 @@ class TableWidgetItem(QTableWidgetItem):
 
 
 class MainApp(QMainWindow):
-
+    """Harshark application UI and logic."""
     def __init__(self):
         super().__init__()
-        # default details display mode = compact (inline)
+        # display mode for request/response panels [0 = spaced, 1 = compact]
         self.display_mode = 1
-        # default search mode = highlight matches
+        # search result mode [0 = filter, 1 = highlight]
         self.search_mode = 1
-        # default case sensitivity mode = case insensitive
+        # case sensitive searching [ 0 = case sensitive, 1 = non case sensitive]
         self.case_mode = 1
-        # default highlight colour = yellow
+        # search result highlight colour [yellow]
         self.chosen_colour = QColor(255, 255, 128)
+
         self.initUI()
         
 
     def initUI(self):
-
+        """Build the PyQt UI."""
         # ---------------------------------------------------------
         # SHORTCUTS
         # ---------------------------------------------------------
@@ -138,7 +155,7 @@ class MainApp(QMainWindow):
 
         #expand
         expand_act = QAction(QIcon(expand_icon), 'Display all Body Content', self)
-        expand_act.setStatusTip('Display all body content for the selected request/response')
+        expand_act.setStatusTip('Display all request and response body content for the selected')
         expand_act.setShortcut('Ctrl+X')
         expand_act.triggered.connect(self.expandBody)
 
@@ -157,7 +174,7 @@ class MainApp(QMainWindow):
         #previous match
         prev_match_act = QAction(QIcon(backward_icon), 'Previous match', self)
         prev_match_act.setStatusTip('Go to previous match')
-        prev_match_act.setShortcut('F4')
+        prev_match_act.setShortcut('Shift+F3')
         prev_match_act.triggered.connect(self.previousMatch)
 
         #clear matches
@@ -230,7 +247,7 @@ class MainApp(QMainWindow):
         self.toolbar_actions.addAction(delete_act)
         self.toolbar_actions.addAction(resize_col_act)
         self.toolbar_actions.addAction(wordwrap_act)
-        self.toolbar_actions.addAction(expand_act)        
+        self.toolbar_actions.addAction(expand_act)
         self.toolbar_actions.addSeparator()
         self.toolbar_actions.addWidget(display_mode_lbl)
         self.toolbar_actions.addWidget(self.displaymode)
@@ -262,7 +279,6 @@ class MainApp(QMainWindow):
         # STATUSBAR
         # ---------------------------------------------------------
         self.status_bar = self.statusBar()
-        self.status_bar.showMessage('Ready')
 
         # ---------------------------------------------------------
         # ENTRY TABLE
@@ -290,6 +306,9 @@ class MainApp(QMainWindow):
         self.entry_table.setHorizontalHeaderLabels(header_labels)
         self.entry_table.hideColumn(0)
         self.entry_table.setFont(QFont('Segoe UI', 10))
+
+        # columns which should be sorted as numbers rather than strings
+        self.numeric_columns = [2, 3, 6, 9, 10, 11, 12]
 
         # when row clicked, fetch the request/response
         self.entry_table.itemSelectionChanged.connect(self.selectRow)
@@ -430,7 +449,7 @@ class MainApp(QMainWindow):
         splitter_ver.addWidget(self.entry_table)
         splitter_ver.addWidget(splitter_hor)
         splitter_ver.setStretchFactor(0, 2)
-        splitter_ver.setStretchFactor(1, 1)        
+        splitter_ver.setStretchFactor(1, 1)
 
         self.setCentralWidget(splitter_ver)
 
@@ -443,27 +462,33 @@ class MainApp(QMainWindow):
         self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v1.0')
         # app icon
         self.setWindowIcon(QIcon(logo_icon))
+        # update status bar
+        self.status_bar.showMessage('Ready')
         # display the app
         self.show()
 
 
     def harCheck(self):
-        """HAR file validation: Check if the file contains a non-zero size
-        'entries' stanza."""
+        """Perform all HAR file validation here. We want to make sure that the
+        HAR file selected can be used and is not malformed in some way.
+        """
+        # Make sure there is an entires key
         try:
-            foo = self.har['log']['entries']
-        except:
-            self.status_bar.removeWidget(self.progress_bar)
-            self.status_bar.showMessage('HAR file contains no entries!')
-            return(-1)
-        if len(foo) < 1:
-            self.status_bar.removeWidget(self.progress_bar)
+            hartest = self.har['log']['entries']
+        except KeyError:
             self.status_bar.showMessage('HAR file contains no entries!')
             return(-1)
 
+        # Make sure there is at least 1 entry
+        if len(hartest) < 1:
+            self.status_bar.showMessage('HAR file contains no entries!')
+            return(-1)
 
-    def harParse(self):
-        """Extract interesting data from the HAR file"""
+        self.harPrepare()
+
+    
+    def harPrepare(self):
+        """Prepare the UI and datastructures for opening a new HAR file."""
         # initalise dictionaries used to store entry details
         self.request_headers_dict = {}
         self.request_body_dict = {}
@@ -473,20 +498,17 @@ class MainApp(QMainWindow):
         self.response_body_dict = {}
         self.response_cookies_dict = {}
 
-        # clear any old entries from textboxes
+        # clear request/response textboxes
         self.clearTextEdit()
 
-        # clear ny old entries in search bar
+        # clear the search bar
         self.searchbox.setText('')
 
-        # columns which should be sorted as numbers rather than strings
-        numeric_columns = [2, 3, 6, 9, 10, 11, 12]
-
-        # HAR file none types
-        self.none_types = [None, '']
-
-        # remove any previous rows which may exist from a previous file
+        # clear previous rows
         self.entry_table.setRowCount(0)
+
+        # HAR file None types
+        self.none_types = [None, '']
 
         # turn off sorting
         self.entry_table.setSortingEnabled(False)
@@ -500,130 +522,70 @@ class MainApp(QMainWindow):
         self.status_bar.clearMessage()
         self.status_bar.addWidget(self.progress_bar)
 
-        # make sure we have some entries in the HAR
-        har_status = self.harCheck()
-        if har_status == -1:
-            return
-   
-        # for each entry in the HAR file
+        self.harParseEntries()
+
+
+    def harParseEntries(self):
+        """Parse each entry in the HAR file and construct a list of lists to be 
+        used to populate the entries table.
+        """
+
+        self.table_data = []
+
         for i, entry in enumerate(self.har['log']['entries']):
 
+            self.row_data = []
+
             # occasionally update the import progress bar
-            if i % 10 == 0:
+            if i % 1 == 0:
                 QApplication.processEvents()
                 self.progress_bar.setValue(i / len(self.har['log']['entries']) * 100)
 
             # create UID for each request
-            id = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+            uid = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
             
-            # create list of this rows data
-            row_data = []
+            self.row_data.append(uid)
 
-            row_data.append(id)
+            self.row_data.append(entry.get('startedDateTime', '-'))
+            self.row_data.append(entry.get('time', -1))
+            self.row_data.append(entry.get('serverIPAddress', -1))
+            self.row_data.append(entry.get('request', {}).get('method', '-'))
+            self.row_data.append(entry.get('request', {}).get('url', '-'))
+            self.row_data.append(entry.get('response', {}).get('status', -1))
+            self.row_data.append(entry.get('response', {}).get('httpVersion', '-'))
+            self.row_data.append(entry.get('response', {}).get('content', {}).get('mimeType', '-'))
+            self.row_data.append(entry.get('request', {}).get('headersSize', -1))
+            self.row_data.append(entry.get('request', {}).get('bodySize', -1))
+            self.row_data.append(entry.get('response', {}).get('headersSize', -1))
+            self.row_data.append(entry.get('response', {}).get('bodySize', -1))
+        
+            self.table_data.append(self.row_data)
 
-            try:
-                if entry['startedDateTime'] in self.none_types:
-                    row_data.append('-')
-                else:
-                    row_data.append(entry['startedDateTime'])
-            except KeyError:
-                row_data.append('-')
-            
-            try:
-                if entry['time'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['time'])
-            except KeyError:
-                row_data.append(-1)
-            
-            try:
-                if entry['serverIPAddress'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['serverIPAddress'])
-            except KeyError:
-                row_data.append(-1)
-            
-            try:
-                if entry['request']['method'] in self.none_types:
-                    row_data.append('-')
-                else:
-                    row_data.append(entry['request']['method'])
-            except KeyError:
-                row_data.append('-')
-            
-            try:
-                if entry['request']['url'] in self.none_types:
-                    row_data.append('-')
-                else:
-                    row_data.append(entry['request']['url'])
-            except KeyError:
-                row_data.append('-')
-            
-            try:
-                if entry['response']['status'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['response']['status'])
-            except KeyError:
-                row_data.append(-1)
-            
-            try:
-                if entry['response']['httpVersion'] in self.none_types:
-                    row_data.append('-')
-                else:
-                    row_data.append(entry['response']['httpVersion'])
-            except KeyError:
-                row_data.append('-')
-            
-            try:
-                if entry['response']['content']['mimeType'] in self.none_types:
-                    row_data.append('-')
-                else:
-                    row_data.append(entry['response']['content']['mimeType'])
-            except KeyError:
-                row_data.append('-')
-            
-            try:
-                if entry['request']['headersSize'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['request']['headersSize'])
-            except KeyError:
-                row_data.append(-1)
-            
-            try:
-                if entry['request']['bodySize'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['request']['bodySize'])
-            except KeyError:
-                row_data.append(-1)
-            
-            try:
-                if entry['response']['headersSize'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['response']['headersSize'])
-            except KeyError:
-                row_data.append(-1)
-            
-            try:
-                if entry['response']['bodySize'] in self.none_types:
-                    row_data.append(-1)
-                else:
-                    row_data.append(entry['response']['bodySize'])
-            except KeyError:
-                row_data.append(-1)
+            # fill the requests dictionaries
+            self.request_headers_dict[uid] = entry.get('request', {}).get('headers', '')
+            self.request_body_dict[uid] = entry.get('request', {}).get('postData', '')
+            self.request_cookies_dict[uid] = entry.get('request', {}).get('cookies', '')
+            self.request_queries_dict[uid] = entry.get('request', {}).get('queryString', '')
 
-            # populate the entries table
+            # fill the response dictionaries
+            self.response_headers_dict[uid] = entry.get('response', {}).get('headers', '')
+            self.response_body_dict[uid] = entry.get('response', {}).get('content', '')
+            self.response_cookies_dict[uid] = entry.get('response', {}).get('cookies', '')
+             
+        self.harPopulateEntries()
+
+
+    def harPopulateEntries(self):
+        """Populate the entries table with the data found in the table_data list."""
+        for i, row_data in enumerate(self.table_data):
             self.entry_table.insertRow(i)
+            # resize row
+            self.entry_table.setRowHeight(i, 28)
 
             for j, item in enumerate(row_data):
 
                 # if this column is a numeric column, sort numerically
-                if j in numeric_columns:
+                if j in self.numeric_columns:
                     # truncate any decimals on 'time' column
                     if j == 2:
                         item = TableWidgetItem(str(int(item)), item)
@@ -634,39 +596,11 @@ class MainApp(QMainWindow):
                 # if not, sort alphabetically
                 else:
                     self.entry_table.setItem(i, j, QTableWidgetItem(str(item)))
-            
-            # fill the requests dictionaries
-            try:
-                self.request_headers_dict[id] = entry['request']['headers']
-            except KeyError:
-                self.request_headers_dict[id] = ''
-            try:
-                self.request_body_dict[id] = entry['request']['postData']
-            except KeyError:
-                self.request_body_dict[id] = ''
-            try:
-                self.request_cookies_dict[id] = entry['request']['cookies']
-            except KeyError:
-                self.request_cookies_dict[id] = ''
-            try:
-                self.request_queries_dict[id] = entry['request']['queryString']
-            except KeyError:
-                self.request_queries_dict[id] = ''
+        
+        self.harComplete()
 
-            # fill the response dictionaries
-            try:
-                self.response_headers_dict[id] = entry['response']['headers']
-            except KeyError:
-                self.response_headers_dict[id] = ''
-            try:
-                self.response_body_dict[id] = entry['response']['content']
-            except KeyError:
-                self.response_body_dict[id] = ''
-            try:
-                self.response_cookies_dict[id] = entry['response']['cookies']
-            except:
-                self.response_cookies_dict[id] = ''
 
+    def harComplete(self):
         # update the statusbar
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
@@ -688,11 +622,13 @@ class MainApp(QMainWindow):
         if file_name == '':
             return
         else:
+
         # load the HAR file
             try:
                 with open(file_name, encoding='utf-8-sig') as har:
                     self.har = json.load(har)
-                    self.harParse()
+                    if self.harCheck() == -1:
+                        return
             except json.decoder.JSONDecodeError:
                 self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
                 return
@@ -1005,7 +941,6 @@ class MainApp(QMainWindow):
         # overwrite URL column sizing
         self.entry_table.setColumnWidth(5, 800)
 
-
     def toggleWordWrap(self):
         """Set word wrap on/off for requests and response tabs."""
         wr_mode = self.request_headers_tab_text.wordWrapMode()
@@ -1069,6 +1004,8 @@ class MainApp(QMainWindow):
         row_count = self.entry_table.rowCount()
 
         matched_items = []
+
+        self.status_bar.showMessage('Searching...')
 
         # look for tabs which contain the search string, grab the request UID
         # and find the UID in the table to get the QTableWidgetItem object
