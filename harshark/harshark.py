@@ -82,6 +82,40 @@ class MainApp(QMainWindow):
         self.case_mode = 1
         # search result highlight colour [yellow]
         self.chosen_colour = QColor(255, 255, 128)
+        # number of characters to truncate large body content to
+        self.truncate_size = 2000
+        # content with any of these MIME-types will be displayed in the Body tabs
+        self.body_safelist = [
+                'text',
+                'html',
+                'css',
+                'json',
+                'javascript',
+                'js',
+                'xml',
+                'x-www-form-urlencoded'
+        ]
+        # display styles for request/response panels
+        self.data_styles = ['<b>{}</b><br>{}<br>', '<b>{}</b>: {}']
+
+        # display styles for Cookies
+        self.cookie_styles = ['''<b>Name</b><br>{}<br><br>
+                              <b>Value</b><br>{}<br><br>
+                              <b>Path</b><br>{}<br><br>
+                              <b>Domain</b><br>{}<br><br>
+                              <b>Expires</b><br>{}<br><br>
+                              <b>httpOnly</b><br>{}<br><br>
+                              <b>Secure</b><br>{}<br><br>
+                              - - -
+                              <br>''',
+                              '''<b>Name</b>: {}<br>
+                              <b>Value</b>: {}<br>
+                              <b>Path</b>: {}<br>
+                              <b>Domain</b>: {}<br>
+                              <b>Expires</b>: {}<br>
+                              <b>httpOnly</b>: {}<br>
+                              <b>Secure</b>: {}<br>'''
+                             ]
 
         self.initUI()
         
@@ -472,14 +506,14 @@ class MainApp(QMainWindow):
         """Perform all HAR file validation here. We want to make sure that the
         HAR file selected can be used and is not malformed in some way.
         """
-        # Make sure there is an entires key
+        # make sure there is an 'entries' key
         try:
             hartest = self.har['log']['entries']
         except KeyError:
             self.status_bar.showMessage('HAR file contains no entries!')
             return(-1)
 
-        # Make sure there is at least 1 entry
+        # make sure there is at least one entry
         if len(hartest) < 1:
             self.status_bar.showMessage('HAR file contains no entries!')
             return(-1)
@@ -488,7 +522,7 @@ class MainApp(QMainWindow):
 
     
     def harPrepare(self):
-        """Prepare the UI and datastructures for opening a new HAR file."""
+        """Prepare the UI and data structures for opening a new HAR file."""
         # initalise dictionaries used to store entry details
         self.request_headers_dict = {}
         self.request_body_dict = {}
@@ -507,9 +541,6 @@ class MainApp(QMainWindow):
         # clear previous rows
         self.entry_table.setRowCount(0)
 
-        # HAR file None types
-        self.none_types = [None, '']
-
         # turn off sorting
         self.entry_table.setSortingEnabled(False)
         
@@ -520,14 +551,15 @@ class MainApp(QMainWindow):
 
         # update status bar
         self.status_bar.clearMessage()
-        self.status_bar.addWidget(self.progress_bar)
+        self.status_bar.addPermanentWidget(self.progress_bar)
 
         self.harParseEntries()
 
 
     def harParseEntries(self):
-        """Parse each entry in the HAR file and construct a list of lists to be 
-        used to populate the entries table.
+        """Parse each entry found in the HAR file and add the interesting key
+        values to a list. Create a list of lists to be used to populate the 
+        entries table. 
         """
 
         self.table_data = []
@@ -536,16 +568,15 @@ class MainApp(QMainWindow):
 
             self.row_data = []
 
-            # occasionally update the import progress bar
-            if i % 1 == 0:
-                QApplication.processEvents()
+            # update process bar every 10 entries
+            if i % 10 == 0:
                 self.progress_bar.setValue(i / len(self.har['log']['entries']) * 100)
+                QApplication.processEvents()
 
             # create UID for each request
             uid = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
             
             self.row_data.append(uid)
-
             self.row_data.append(entry.get('startedDateTime', '-'))
             self.row_data.append(entry.get('time', -1))
             self.row_data.append(entry.get('serverIPAddress', -1))
@@ -561,7 +592,7 @@ class MainApp(QMainWindow):
         
             self.table_data.append(self.row_data)
 
-            # fill the requests dictionaries
+            # fill the request dictionaries
             self.request_headers_dict[uid] = entry.get('request', {}).get('headers', '')
             self.request_body_dict[uid] = entry.get('request', {}).get('postData', '')
             self.request_cookies_dict[uid] = entry.get('request', {}).get('cookies', '')
@@ -572,18 +603,16 @@ class MainApp(QMainWindow):
             self.response_body_dict[uid] = entry.get('response', {}).get('content', '')
             self.response_cookies_dict[uid] = entry.get('response', {}).get('cookies', '')
              
-        self.harPopulateEntries()
+        self.harPopulateTable()
 
 
-    def harPopulateEntries(self):
+    def harPopulateTable(self):
         """Populate the entries table with the data found in the table_data list."""
         for i, row_data in enumerate(self.table_data):
             self.entry_table.insertRow(i)
-            # resize row
-            self.entry_table.setRowHeight(i, 28)
+            self.entry_table.setRowHeight(i, 26)
 
             for j, item in enumerate(row_data):
-
                 # if this column is a numeric column, sort numerically
                 if j in self.numeric_columns:
                     # truncate any decimals on 'time' column
@@ -601,10 +630,13 @@ class MainApp(QMainWindow):
 
 
     def harComplete(self):
+        """Cleanup tasks once the HAR file has been parsed and the entries
+        table populated.
+        """
         # update the statusbar
         self.progress_bar.setValue(100)
         self.status_bar.removeWidget(self.progress_bar)
-        self.status_bar.showMessage('HAR loaded sucessfully')
+        self.status_bar.showMessage('HAR file loaded sucessfully')
 
         # turn on sorting
         self.entry_table.setSortingEnabled(True)
@@ -619,36 +651,35 @@ class MainApp(QMainWindow):
         file_name = file_name[0]
         
         # no file selected
-        if file_name == '':
+        if not file_name:
             return
-        else:
-
-        # load the HAR file
-            try:
-                with open(file_name, encoding='utf-8-sig') as har:
-                    self.har = json.load(har)
-                    if self.harCheck() == -1:
-                        return
-            except json.decoder.JSONDecodeError:
-                self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
-                return
+        
+        try:
+            with open(file_name, 'r', encoding='utf-8-sig') as har:
+                self.har = json.load(har)
+        except json.decoder.JSONDecodeError:
+            self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
+            return
+                
+        if self.harCheck() == -1:
+            return
 
 
     def deleteRow(self):
-        """delete the selected rows from the requests table when hitting the 
-        'delete' key
+        """Delete the selected rows from the entries table when hitting the 
+        'delete' key or clicking the 'delete' button.
         """
         all_selection_groups = self.entry_table.selectedRanges()
-        # count number of row selection groups
         number_of_selection_groups = len(all_selection_groups)
+
         # for each row selection group (reverse)
         for i in range(number_of_selection_groups, 0, -1):
             # index into this row selection group
-            selRange  = all_selection_groups[number_of_selection_groups - 1]
+            sel_range  = all_selection_groups[number_of_selection_groups - 1]
             # get first row for this selection
-            fist_row = selRange.topRow()
+            fist_row = sel_range.topRow()
             # get last row for this selection
-            last_row = selRange.bottomRow()
+            last_row = sel_range.bottomRow()
             # delete from first to last row in this selection        
             for j in range(last_row, fist_row - 1, -1):
                 self.entry_table.removeRow(j)
@@ -663,30 +694,14 @@ class MainApp(QMainWindow):
         if self.entry_table.currentRow() == -1:
             return
 
-        # number of characters to truncate large body content to
-        truncate_size = 2000
-
-        # response body mime-types which will be displayed
-        body_safelist = [
-                'text',
-                'html',
-                'css',
-                'json',
-                'javascript',
-                'js',
-                'xml',
-                'x-www-form-urlencoded'
-        ]
-
-        # cookie store
-        cookie_list = []
-
-        # display styles for request/response panels
-        data_styles = ['<b>{}</b><br>{}<br>', '<b>{}</b>: {}']
-        active_style = data_styles[self.display_mode]
+        # get the display style
+        active_style = self.data_styles[self.display_mode]
 
         # clear old data from the text boxes
         self.clearTextEdit()
+
+        # initialise a cookie store
+        cookie_list = []
 
         # get UID from the active row
         row_id = self.entry_table.item(self.entry_table.currentRow(), 0).text()
@@ -704,9 +719,8 @@ class MainApp(QMainWindow):
         for item in request_headers:
             entry = active_style.format(item['name'], item['value'])
             self.request_headers_tab_text.append(entry)
-
-            # get cookie details directly from the cookie header if there isn't
-            # a nice cookie stanza included in the HAR capture
+            # if request cookies are not itemised specifically in the HAR,
+            # extract the information directly from the request header
             if not request_cookies:
                 if item['name'] == 'Cookie' or item['name'] == 'cookie':
                     cookie_header = item['value'].split(';')
@@ -715,21 +729,20 @@ class MainApp(QMainWindow):
                         self.request_cookie_tab_text.append('')
 
         # request body tab
-        if request_body not in self.none_types:
-            if any(mime in request_body['mimeType'] for mime in body_safelist):
-                try:
-                    entry = request_body['text'][:truncate_size]
-                    if len(entry) == truncate_size:
-                        entry = '[Request body truncated. Use Ctrl+X to expand.]\n\n' + str(entry)
-                    self.request_body_tab_text.insertPlainText(str(entry))
-                except KeyError:
-                    self.request_body_tab_text.insertPlainText('')
-            elif request_body['mimeType'] in self.none_types:
+        if request_body:
+            # if request body has valid mimeType
+            if any(mime in request_body.get('mimeType') for mime in self.body_safelist):
+                entry = request_body.get('text', '')[:self.truncate_size]
+                # truncate if large body
+                if len(entry) == self.truncate_size:
+                    entry = '[Request body truncated. Use Ctrl+X to expand.]\n\n' + str(entry)
+                self.request_body_tab_text.insertPlainText(str(entry))
+            # mimeType is blank
+            elif not request_body.get('mimeType'):
                 self.request_body_tab_text.insertPlainText('')
+            # else if request body has invalid mimeType
             else:
                 self.request_body_tab_text.insertPlainText('[Non text data]')  
-        else:
-            self.request_body_tab_text.insertPlainText('')  
         
         # request query strings tab
         for item in request_queries:
@@ -745,107 +758,54 @@ class MainApp(QMainWindow):
         for item in response_headers:
             entry = active_style.format(item['name'], item['value'])
             self.response_headers_tab_text.append(entry)
-
-            # get cookie details directly from the set-cookie header if there 
-            # isn't a nice cookie stanza included in the HAR capture
+            # if response cookies are not itemised specifically in the HAR,
+            # extract the information directly from the response header
             if not response_cookies:
                 if item['name'] == 'Set-Cookie' or item['name'] == 'set-cookie':
+                    # split unique cookies
                     cookie_header = item['value'].split('\n')
                     for cookie in cookie_header:
-                        cookie = cookie.split(';')
-                        for each in cookie:
-                            self.response_cookie_tab_text.append(each.strip())
+                        # split params for each cookie
+                        cookie_params = cookie.split(';')
+                        for param in cookie_params:
+                            self.response_cookie_tab_text.append(param.strip())
                         self.response_cookie_tab_text.append('')
 
         # response body tab
-        if response_body not in self.none_types:
-            if any(mime in response_body['mimeType'] for mime in body_safelist):
-                try:
-                    entry = response_body['text'][:truncate_size]
-                    if len(entry) == truncate_size:
-                        entry = '[Response body truncated. Use Ctrl+X to expand.]\n\n' + str(entry)
-                    self.response_body_tab_text.insertPlainText(entry)
-                except KeyError:
-                    self.response_body_tab_text.insertPlainText('')
-            elif response_body['mimeType'] in self.none_types:
+        if response_body:
+            # if response body has a valid mimeType
+            if any(mime in response_body.get('mimeType') for mime in self.body_safelist):
+                entry = response_body.get('text', '')[:self.truncate_size]
+                # truncate if large body
+                if len(entry) == self.truncate_size:
+                    entry = '[Response body truncated. Use Ctrl+X to expand.]\n\n' + str(entry)
+                self.response_body_tab_text.insertPlainText(str(entry))
+            # mimeType is blank
+            elif not response_body.get('mimeType'):
                 self.response_body_tab_text.insertPlainText('')
+            # else response body has an invalid mimeType
             else:
                 self.response_body_tab_text.insertPlainText('[Non text data]')
-        else:
-            self.response_body_tab_text.insertPlainText('')
     
         # response cookies tab
         if response_cookies:
             for item in response_cookies:
-                
-                cookie = {
-                    'name':'',
-                    'value':'',
-                    'path':'',
-                    'domain':'',
-                    'expires':'',
-                    'httpOnly':'',
-                    'secure':'' 
-                    }
-
-                try:
-                    cookie['name'] = item['name']
-                except KeyError:
-                    pass
-                try:
-                    cookie['value'] = item['value']
-                except KeyError:
-                    pass
-                try:
-                    cookie['path'] = item['path']
-                except KeyError:
-                    pass
-                try:
-                    cookie['domain'] = item['domain']
-                except KeyError:
-                    pass
-                try:
-                    cookie['expires'] = item['expires']
-                except KeyError:
-                    pass
-                try:
-                    cookie['httpOnly'] = item['httpOnly']
-                except KeyError:
-                    pass
-                try:
-                    cookie['secure'] = item['secure']
-                except KeyError:
-                    pass
-
+                cookie = {}
+                cookie['name'] = item.get('name', '')
+                cookie['value'] = item.get('value', '')
+                cookie['path'] = item.get('path', '')
+                cookie['domain'] = item.get('domain', '')
+                cookie['expires'] = item.get('expires', '')
+                cookie['httpOnly'] = item.get('httpOnly', '')
+                cookie['secure'] = item.get('secure', '')
                 cookie_list.append(cookie)
 
             for cookie in cookie_list:
-                cookie_style_newline = '''<b>Name</b><br>{}<br><br>
-                                          <b>Value</b><br>{}<br><br>
-                                          <b>Path</b><br>{}<br><br>
-                                          <b>Domain</b><br>{}<br><br>
-                                          <b>Expires</b><br>{}<br><br>
-                                          <b>httpOnly</b><br>{}<br><br>
-                                          <b>Secure</b><br>{}<br><br>
-                                          - - -
-                                          <br>'''
-
-                cookie_style_inline = '''<b>Name</b>: {}<br>
-                                         <b>Value</b>: {}<br>
-                                         <b>Path</b>: {}<br>
-                                         <b>Domain</b>: {}<br>
-                                         <b>Expires</b>: {}<br>
-                                         <b>httpOnly</b>: {}<br>
-                                         <b>Secure</b>: {}<br>'''
-
-                cookie_styles = [cookie_style_newline, cookie_style_inline]
-                active_style = cookie_styles[self.display_mode]
-                
+                active_style = self.cookie_styles[self.display_mode]
                 entry = active_style.format(cookie['name'], cookie['value'], 
                                             cookie['path'], cookie['domain'], 
                                             cookie['expires'], cookie['httpOnly'],
                                             cookie['secure'])
-
                 self.response_cookie_tab_text.append(entry)
         
         self.scrollTextEdit()
