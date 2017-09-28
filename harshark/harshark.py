@@ -84,7 +84,7 @@ class MainApp(QMainWindow):
         self.chosen_colour = QColor(255, 255, 128)
         # number of characters to truncate large body content to
         self.truncate_size = 2000
-        # content with any of these MIME-types will be displayed in the Body tabs
+        # content with any of these MIME-types will be displayed in the body tabs
         self.body_safelist = [
                 'text',
                 'html',
@@ -553,6 +553,13 @@ class MainApp(QMainWindow):
         self.status_bar.clearMessage()
         self.status_bar.addPermanentWidget(self.progress_bar)
 
+        # remove searchbox stylings
+        self.searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+        ''')
+
         self.harParseEntries()
 
 
@@ -807,12 +814,8 @@ class MainApp(QMainWindow):
                                             cookie['expires'], cookie['httpOnly'],
                                             cookie['secure'])
                 self.response_cookie_tab_text.append(entry)
-        
-        self.scrollTextEdit()
 
-
-    def scrollTextEdit(self):
-        """Move scrollbar to the top for all QTextEdit widgets."""
+        # scroll all text boxes to the top
         self.request_headers_tab_text.moveCursor(QTextCursor.Start)
         self.request_body_tab_text.moveCursor(QTextCursor.Start)
         self.request_query_tab_text.moveCursor(QTextCursor.Start)
@@ -820,7 +823,7 @@ class MainApp(QMainWindow):
         self.response_headers_tab_text.moveCursor(QTextCursor.Start)
         self.response_body_tab_text.moveCursor(QTextCursor.Start)
         self.response_cookie_tab_text.moveCursor(QTextCursor.Start)
-                
+
     
     def expandBody(self):
         """If request/response body has been truncated, use Ctrl+X to 
@@ -851,7 +854,7 @@ class MainApp(QMainWindow):
         
 
     def changeFont(self):
-        """Change the font used by Harshark."""
+        """Change the display font used."""
         font, valid = QFontDialog.getFont()
         if valid:
             self.entry_table.setFont(font)         
@@ -874,7 +877,7 @@ class MainApp(QMainWindow):
         current_search_mode = self.searchmode.currentText()
         if current_search_mode == 'Highlight Results':
             self.search_mode = 1
-        elif current_search_mode == 'Filter Results':
+        else:
             self.search_mode = 0
 
 
@@ -883,7 +886,7 @@ class MainApp(QMainWindow):
         current_display_mode = self.displaymode.currentText()
         if current_display_mode == 'Compact':
             self.display_mode = 1
-        elif current_display_mode == 'Spaced':
+        else:
             self.display_mode = 0
 
 
@@ -896,15 +899,15 @@ class MainApp(QMainWindow):
             
 
     def resizeColumns(self):
-        """Resize all columns to fit - URL fixed width."""
+        """Resize all columns to fit with the exeption of the URL column
+        with is fixed width to improve readability."""
         self.entry_table.resizeColumnsToContents()
-        # overwrite URL column sizing
         self.entry_table.setColumnWidth(5, 800)
+
 
     def toggleWordWrap(self):
         """Set word wrap on/off for requests and response tabs."""
         wr_mode = self.request_headers_tab_text.wordWrapMode()
-
         if wr_mode == 4:
             self.request_headers_tab_text.setWordWrapMode(QTextOption.NoWrap)
             self.request_body_tab_text.setWordWrapMode(QTextOption.NoWrap)
@@ -924,7 +927,7 @@ class MainApp(QMainWindow):
 
 
     def clearTextEdit(self):
-        """Clear the request/response tabs."""
+        """Clear the content from the request/response tabs."""
         self.request_headers_tab_text.setPlainText('')
         self.request_body_tab_text.setPlainText('')
         self.request_query_tab_text.setPlainText('')
@@ -935,7 +938,7 @@ class MainApp(QMainWindow):
 
     
     def searchEntries(self):
-        """Search the main entries table."""
+        """Search all collected data from the HAR file to find matches."""
 
         # if there aren't any rows in the table do nothing
         row_count = self.entry_table.rowCount()
@@ -945,19 +948,25 @@ class MainApp(QMainWindow):
         # remove any previous search highlights
         self.clearSearch()
 
+        # check whether we are doing case-sensitive matching
         find_flags = Qt.MatchFlags()
-        
-        # check for case sensitive matching mode
         if self.case_mode == 0:
             find_flags = Qt.MatchCaseSensitive
         else:
             find_flags = Qt.MatchContains
 
+        # get the search string
         search_string = str(self.searchbox.text())
+        search_string_lower = search_string.lower()
 
         # if search string is blank clear out the ordered list of highligted rows
-        if search_string == '':
+        if not search_string:
             self.matched_ordered = []
+            self.searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+            ''')
             return
 
         column_count = self.entry_table.columnCount()
@@ -967,12 +976,20 @@ class MainApp(QMainWindow):
 
         self.status_bar.showMessage('Searching...')
 
-        # look for tabs which contain the search string, grab the request UID
-        # and find the UID in the table to get the QTableWidgetItem object
+        # set QLineEdit colour
+        self.searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(175, 255, 175);
+            }
+        ''')
+
+        # look for request/response tabs which contain the search string, 
+        # grab the request UID and find the UID in the table to get the 
+        # QTableWidgetItem object
 
         for key, value in self.request_headers_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -980,7 +997,7 @@ class MainApp(QMainWindow):
      
         for key, value in self.request_body_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -988,7 +1005,7 @@ class MainApp(QMainWindow):
         
         for key, value in self.request_cookies_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -996,7 +1013,7 @@ class MainApp(QMainWindow):
 
         for key, value in self.request_queries_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -1004,7 +1021,7 @@ class MainApp(QMainWindow):
         
         for key, value in self.response_headers_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -1012,7 +1029,7 @@ class MainApp(QMainWindow):
         
         for key, value in self.response_body_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -1020,7 +1037,7 @@ class MainApp(QMainWindow):
         
         for key, value in self.response_cookies_dict.items():
             if self.case_mode == 1:
-                if search_string.lower() in str(value).lower():
+                if search_string_lower in str(value).lower():
                     matched_items.append(self.entry_table.findItems(key, find_flags))
             else:
                 if search_string in str(value):
@@ -1036,7 +1053,7 @@ class MainApp(QMainWindow):
         matched_rows = []
 
         # get the table row for each matched QTableWidgetItem object
-        if len(matched_items) > 0:
+        if matched_items:
             for item in matched_items:
                 matched_rows.append(self.entry_table.row(item))
         # no matches
@@ -1046,6 +1063,7 @@ class MainApp(QMainWindow):
             self.matched_ordered = []
             return
 
+        # remove duplicate rows
         matched_rows = list(set(matched_rows))
 
         # highlight each cell of each table row where a match was found
@@ -1054,17 +1072,18 @@ class MainApp(QMainWindow):
                 item = self.entry_table.item(row, column)
                 item.setBackground(self.chosen_colour)
 
+        # filter matched rows
+        if self.search_mode == 0:
+            for row in range(row_count):
+                if row not in matched_rows:
+                    self.entry_table.setRowHidden(row, True)
+
         # get an ordered list of all matched rows
         self.matched_ordered = []
         for row in range(row_count):
             item = self.entry_table.item(row, 1)
             if item.background().color() == self.chosen_colour:
                 self.matched_ordered.append(row)
-
-        if self.search_mode == 0:
-            for row in range(row_count):
-                if row not in matched_rows:
-                    self.entry_table.setRowHidden(row, True)
 
         # activate the first row
         self.entry_table.setCurrentCell(self.matched_ordered[0], 1)
@@ -1084,13 +1103,20 @@ class MainApp(QMainWindow):
                 item = self.entry_table.item(row, column)
                 item.setBackground(QColor(255, 255, 255))
 
+        # remove search box styling
+        self.searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+            ''')
+
 
     def previousMatch(self):
         """Skip back to the previous search match in the entries table."""
         # do nothing if there is there is no matches in the list or if
         # the list hasn't even been initalised (no HAR loaded)
         try:
-            if self.matched_ordered == []:
+            if not self.matched_ordered:
                 return
         except AttributeError:
             return
@@ -1124,7 +1150,7 @@ class MainApp(QMainWindow):
         # do nothing if there is there is no matches in the list or if
         # the list hasn't even been initalised (no HAR loaded)
         try:
-            if self.matched_ordered == []:
+            if not self.matched_ordered:
                 return
         except AttributeError:
             return
@@ -1177,23 +1203,27 @@ class MainApp(QMainWindow):
             self.clearSearchRequest()
             return
 
-        # get active request tab
-        active_tab = self.request_tabs.currentIndex()
-
         # get active QTextEdit object
-        if active_tab == 0:
+        if self.active_request_tab == 0:
             active_qtextedit = self.request_headers_tab_text
-        elif active_tab == 1:
+        elif self.active_request_tab == 1:
             active_qtextedit = self.request_body_tab_text
-        elif active_tab == 2:
+        elif self.active_request_tab == 2:
             active_qtextedit = self.request_query_tab_text
-        elif active_tab == 3:
-            active_qtextedit = self.request_cookie_tab_text            
+        elif self.active_request_tab == 3:
+            active_qtextedit = self.request_cookie_tab_text
 
         highlight_style = QTextCharFormat()
         highlight_style.setBackground(QBrush(self.chosen_colour))
 
         self.cursor_locations = []
+
+        # set QLineEdit colour
+        self.request_searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(175, 255, 175);
+            }
+        ''')
 
         # move cursor to the start of the QTextEdit box
         active_qtextedit.moveCursor(QTextCursor.Start)
@@ -1209,7 +1239,17 @@ class MainApp(QMainWindow):
             else:
                 break
 
-        self.status_bar.showMessage('Search Complete : {} Matches'.format(len(self.cursor_locations)))
+        num_matches = len(self.cursor_locations)
+
+        # remove search styling
+        if not num_matches:
+            self.request_searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+            ''')
+
+        self.status_bar.showMessage('Search Complete : {} Matches'.format(num_matches))
     
     
     def nextMatchRequest(self):
@@ -1238,7 +1278,7 @@ class MainApp(QMainWindow):
             else:
                 self.current_index += 1
 
-    
+
     def clearSearchRequest(self):
         """Clear any search highlights from the active request tab."""
         # get active request tab
@@ -1268,6 +1308,13 @@ class MainApp(QMainWindow):
         # clear old cursor locations
         self.cursor_locations = []
         self.status_bar.clearMessage()
+
+        # remove search styling
+        self.request_searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(255, 255, 255);
+            }
+        ''')
         
 
     def searchResponse(self):
