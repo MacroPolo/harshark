@@ -885,8 +885,10 @@ class MainApp(QMainWindow):
     def changeHighlight(self):
         """Change the colour used to highlight search matches."""
         self.chosen_colour = QColorDialog.getColor()
-        
-        
+        if not self.chosen_colour.isValid():
+            self.chosen_colour = QColor(255, 255, 128)
+
+
     def searchModeChanged(self):
         """Set the search mode (highlight or filter)."""
         current_search_mode = self.searchmode.currentText()
