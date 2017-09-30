@@ -8,11 +8,6 @@ Usage:
     The user guide for Harshark can be found on the GitHub page at
     https://github.com/MacroPolo/harshark
 
-Todo:
-    *
-    *
-    *
-
 """
 
 import io
@@ -218,7 +213,7 @@ class MainApp(QMainWindow):
 
         #toggle case sensitivity
         self.case_act = QAction(QIcon(case_icon), 'Toggle Case Sensitive Matching', 
-                           self, checkable=True)
+                                self, checkable=True)
         self.case_act.setChecked(False)
         self.case_act.setStatusTip('Toggle case sensitive matching')
         self.case_act.triggered.connect(self.toggleCase)
@@ -555,9 +550,9 @@ class MainApp(QMainWindow):
 
         # remove searchbox stylings
         self.searchbox.setStyleSheet('''
-                QLineEdit {
-                    background-color: rgb(255, 255, 255);
-                }
+            QLineEdit {
+                background-color: rgb(255, 255, 255);
+            }
         ''')
 
         self.harParseEntries()
@@ -706,6 +701,24 @@ class MainApp(QMainWindow):
 
         # clear old data from the text boxes
         self.clearTextEdit()
+
+        # clear any searchbox stylings
+        self.request_searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(255, 255, 255);
+            }
+        ''')
+        self.response_searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(255, 255, 255);
+            }
+        ''')
+
+        # clear the statusbar
+        self.status_bar.clearMessage()
+        # clear the request/response searchboxes
+        self.request_searchbox.setText('')
+        self.response_searchbox.setText('')
 
         # initialise a cookie store
         cookie_list = []
@@ -960,6 +973,7 @@ class MainApp(QMainWindow):
         search_string_lower = search_string.lower()
 
         # if search string is blank clear out the ordered list of highligted rows
+        # and remove searchbox styling
         if not search_string:
             self.matched_ordered = []
             self.searchbox.setStyleSheet('''
@@ -972,20 +986,13 @@ class MainApp(QMainWindow):
         column_count = self.entry_table.columnCount()
         row_count = self.entry_table.rowCount()
 
-        matched_items = []
-
         self.status_bar.showMessage('Searching...')
-
-        # set QLineEdit colour
-        self.searchbox.setStyleSheet('''
-            QLineEdit {
-                background-color: rgb(175, 255, 175);
-            }
-        ''')
 
         # look for request/response tabs which contain the search string, 
         # grab the request UID and find the UID in the table to get the 
         # QTableWidgetItem object
+
+        matched_items = []
 
         for key, value in self.request_headers_dict.items():
             if self.case_mode == 1:
@@ -1086,8 +1093,16 @@ class MainApp(QMainWindow):
                 self.matched_ordered.append(row)
 
         # activate the first row
+        self.entry_table.setFocus()
         self.entry_table.setCurrentCell(self.matched_ordered[0], 1)
         self.status_bar.showMessage('Search Complete : {} Matches'.format(len(matched_rows)))
+
+        # set the searchbox styling to indicate a match
+        self.searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(175, 255, 175);
+            }
+        ''')
 
 
     def clearSearch(self):
@@ -1103,12 +1118,12 @@ class MainApp(QMainWindow):
                 item = self.entry_table.item(row, column)
                 item.setBackground(QColor(255, 255, 255))
 
-        # remove search box styling
+        # remove searchbox styling
         self.searchbox.setStyleSheet('''
-                QLineEdit {
-                    background-color: rgb(255, 255, 255);
-                }
-            ''')
+            QLineEdit {
+                background-color: rgb(255, 255, 255);
+            }
+        ''')
 
 
     def previousMatch(self):
@@ -1182,10 +1197,10 @@ class MainApp(QMainWindow):
     def searchRequest(self):
         """Search in the active requests tab."""
         # clear previous searches
-        self.clearSearchRequest()
+        self.clearSearchTabs('req')
 
         # set current index for stepping through results
-        self.current_index = 0
+        self.current_index_req = 0
 
         # store the requests tab the search was performed on
         self.active_request_tab = self.request_tabs.currentIndex()
@@ -1200,8 +1215,10 @@ class MainApp(QMainWindow):
         search_string = str(self.request_searchbox.text())
 
         if search_string == '':
-            self.clearSearchRequest()
+            self.clearSearchTabs('req')
             return
+
+        self.status_bar.showMessage('Searching...')
 
         # get active QTextEdit object
         if self.active_request_tab == 0:
@@ -1216,14 +1233,7 @@ class MainApp(QMainWindow):
         highlight_style = QTextCharFormat()
         highlight_style.setBackground(QBrush(self.chosen_colour))
 
-        self.cursor_locations = []
-
-        # set QLineEdit colour
-        self.request_searchbox.setStyleSheet('''
-            QLineEdit {
-                background-color: rgb(175, 255, 175);
-            }
-        ''')
+        self.cursor_locations_req = []
 
         # move cursor to the start of the QTextEdit box
         active_qtextedit.moveCursor(QTextCursor.Start)
@@ -1234,21 +1244,28 @@ class MainApp(QMainWindow):
             if matches:
                 qc = active_qtextedit.textCursor()
                 if qc.hasSelection():
-                    self.cursor_locations.append(qc)
+                    self.cursor_locations_req.append(qc)
                     qc.mergeCharFormat(highlight_style)
             else:
                 break
 
-        num_matches = len(self.cursor_locations)
+        num_matches = len(self.cursor_locations_req)
 
-        # remove search styling
-        if not num_matches:
+        # set searchbox styling to indicate a match
+        if num_matches:
+            self.request_searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(175, 255, 175);
+                }
+            ''')
+        else:
             self.request_searchbox.setStyleSheet('''
                 QLineEdit {
                     background-color: rgb(255, 255, 255);
                 }
             ''')
-
+        
+        active_qtextedit.setFocus()
         self.status_bar.showMessage('Search Complete : {} Matches'.format(num_matches))
     
     
@@ -1258,31 +1275,11 @@ class MainApp(QMainWindow):
 
         # do nothing if user tries to skip forward on a tab other than the
         # one the latest search was performed on
-        if self.active_request_tab != active_tab:
+        try:
+            if self.active_request_tab != active_tab:
+                return
+        except AttributeError:  # there has been no search (F5 with no search)
             return
-
-        # get active QTextEdit object
-        if active_tab == 0:
-            active_qtextedit = self.request_headers_tab_text
-        elif active_tab == 1:
-            active_qtextedit = self.request_body_tab_text
-        elif active_tab == 2:
-            active_qtextedit = self.request_query_tab_text
-        elif active_tab == 3:
-            active_qtextedit = self.request_cookie_tab_text 
-
-        if len(self.cursor_locations) > 0:
-            active_qtextedit.setTextCursor(self.cursor_locations[self.current_index])
-            if len(self.cursor_locations) - 1 == self.current_index:
-                self.current_index = 0
-            else:
-                self.current_index += 1
-
-
-    def clearSearchRequest(self):
-        """Clear any search highlights from the active request tab."""
-        # get active request tab
-        active_tab = self.request_tabs.currentIndex()
 
         # get active QTextEdit object
         if active_tab == 0:
@@ -1294,39 +1291,75 @@ class MainApp(QMainWindow):
         elif active_tab == 3:
             active_qtextedit = self.request_cookie_tab_text
 
+        if len(self.cursor_locations_req) > 0:
+            active_qtextedit.setTextCursor(self.cursor_locations_req[self.current_index_req])
+            if len(self.cursor_locations_req) - 1 == self.current_index_req:
+                self.current_index_req = 0
+            else:
+                self.current_index_req += 1
+
+
+    def clearSearchTabs(self, tab_set):
+        """Clear any search highlights from the request tabs."""
+
+        req_headers = self.request_headers_tab_text
+        req_body = self.request_body_tab_text
+        req_query = self.request_query_tab_text
+        req_cookie = self.request_cookie_tab_text
+
+        res_headers = self.response_headers_tab_text
+        res_body = self.response_body_tab_text
+        res_cookies = self.response_cookie_tab_text
+
+        req_tabs = [req_headers, req_body, req_query, req_cookie]
+        res_tabs = [res_headers, res_body, res_cookies]
+
+        if tab_set == 'req':
+            active_tabs = req_tabs
+        elif tab_set == 'res':
+            active_tabs = res_tabs
+
         highlight_style = QTextCharFormat()
         highlight_style.setBackground(QBrush(QColor(255, 255, 255)))
 
-        old_cursor = active_qtextedit.textCursor()
-        active_qtextedit.selectAll()
-        cursor = active_qtextedit.textCursor()
-        cursor.mergeCharFormat(highlight_style)
+        for tab in active_tabs:
+            tab.selectAll()
+            cursor = tab.textCursor()
+            cursor.mergeCharFormat(highlight_style)
 
-        # reset the cursor
-        active_qtextedit.moveCursor(QTextCursor.Start)
+            # reset the cursor
+            tab.moveCursor(QTextCursor.Start)
         
-        # clear old cursor locations
-        self.cursor_locations = []
-        self.status_bar.clearMessage()
+        # remove searchbox styling
+        if tab_set == 'req':
+            self.cursor_locations_req = []
+            self.request_searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+            ''')
+        elif tab_set == 'res':
+            self.cursor_locations_res = []
+            self.response_searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+            ''')
 
-        # remove search styling
-        self.request_searchbox.setStyleSheet('''
-            QLineEdit {
-                background-color: rgb(255, 255, 255);
-            }
-        ''')
+        self.status_bar.clearMessage()
+        
         
 
     def searchResponse(self):
         """Search in the active response tab."""
         # clear previous searches
-        self.clearSearchResponse()
+        self.clearSearchTabs('res')
 
         # set current index for stepping through results
-        self.current_index = 0
+        self.current_index_res = 0
 
         # store the response tab the search was performed on
-        self.active_response_tabs = self.response_tabs.currentIndex()
+        self.active_response_tab = self.response_tabs.currentIndex()
         
         find_flags = QTextDocument.FindFlags()
         
@@ -1338,24 +1371,23 @@ class MainApp(QMainWindow):
         search_string = str(self.response_searchbox.text())
 
         if search_string == '':
-            self.clearSearchResponse()
+            self.clearSearchTabs('res')
             return
 
-        # get active request tab
-        active_tab = self.response_tabs.currentIndex()
+        self.status_bar.showMessage('Searching...')
 
         # get active QTextEdit object
-        if active_tab == 0:
+        if self.active_response_tab == 0:
             active_qtextedit = self.response_headers_tab_text
-        elif active_tab == 1:
+        elif self.active_response_tab == 1:
             active_qtextedit = self.response_body_tab_text
-        elif active_tab == 2:
+        elif self.active_response_tab == 2:
             active_qtextedit = self.response_cookie_tab_text      
 
         highlight_style = QTextCharFormat()
         highlight_style.setBackground(QBrush(self.chosen_colour))
 
-        self.cursor_locations = []
+        self.cursor_locations_res = []
 
         # move cursor to the start of the QTextEdit box
         active_qtextedit.moveCursor(QTextCursor.Start)
@@ -1365,21 +1397,41 @@ class MainApp(QMainWindow):
             if matches:
                 qc = active_qtextedit.textCursor()
                 if qc.hasSelection():
-                    self.cursor_locations.append(qc)
+                    self.cursor_locations_res.append(qc)
                     qc.mergeCharFormat(highlight_style)
             else:
                 break
 
-        self.status_bar.showMessage('Search Complete : {} Matches'.format(len(self.cursor_locations)))
+        num_matches = len(self.cursor_locations_res)
+
+        # set searchbox styling to indicate a match
+        if num_matches:
+            self.response_searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(175, 255, 175);
+                }
+            ''')
+        else:
+            self.response_searchbox.setStyleSheet('''
+                QLineEdit {
+                    background-color: rgb(255, 255, 255);
+                }
+            ''')
+
+        active_qtextedit.setFocus()        
+        self.status_bar.showMessage('Search Complete : {} Matches'.format(num_matches))
         
 
     def nextMatchResponse(self):
-        """Skip to the next search match in the active request tab."""
+        """Skip to the next search match in the active response tab."""
         active_tab = self.response_tabs.currentIndex()
 
         # do nothing if user tries to skip forward on a tab other than the
         # one the search was performed on
-        if self.active_response_tabs != active_tab:
+        try:
+            if self.active_response_tab != active_tab:
+                return
+        except AttributeError:  # there has ben no search (F6 with no search)
             return
 
         # get active QTextEdit object
@@ -1390,41 +1442,12 @@ class MainApp(QMainWindow):
         elif active_tab == 2:
             active_qtextedit = self.response_cookie_tab_text
 
-        if len(self.cursor_locations) > 0:
-            active_qtextedit.setTextCursor(self.cursor_locations[self.current_index])
-            if len(self.cursor_locations) - 1 == self.current_index:
-                self.current_index = 0
+        if len(self.cursor_locations_res) > 0:
+            active_qtextedit.setTextCursor(self.cursor_locations_res[self.current_index_res])
+            if len(self.cursor_locations_res) - 1 == self.current_index_res:
+                self.current_index_res = 0
             else:
-                self.current_index += 1
-
-
-    def clearSearchResponse(self):
-        """Clear any search highlights from the active request tab."""
-        # get active request tab
-        active_tab = self.response_tabs.currentIndex()
-
-        # get active QTextEdit object
-        if active_tab == 0:
-            active_qtextedit = self.response_headers_tab_text
-        elif active_tab == 1:
-            active_qtextedit = self.response_body_tab_text
-        elif active_tab == 2:
-            active_qtextedit = self.response_cookie_tab_text
-
-        highlight_style = QTextCharFormat()
-        highlight_style.setBackground(QBrush(QColor(255, 255, 255)))
-
-        old_cursor = active_qtextedit.textCursor()
-        active_qtextedit.selectAll()
-        cursor = active_qtextedit.textCursor()
-        cursor.mergeCharFormat(highlight_style)
-
-        # reset the cursor
-        active_qtextedit.moveCursor(QTextCursor.Start)
-        
-        # clear old cursor locations
-        self.cursor_locations = []
-        self.status_bar.clearMessage()
+                self.current_index_res += 1
 
 
     def aboutPopup(self):
@@ -1432,9 +1455,10 @@ class MainApp(QMainWindow):
         about_msg = QMessageBox()
         about_msg.setIcon(QMessageBox.Information)
         about_msg.setWindowTitle("About Harshark")        
-        about_msg.setText('Harshark Version 1.0\n\nCopyright © 2017 Mark Riddell')
+        about_msg.setText('Harshark Version 1.0.1\n\nCopyright © 2017 Mark Riddell')
         about_msg.setInformativeText("Sofware licensed under the MIT License.")
         about_msg.exec_()
+
 
 def main():
     app = QApplication(sys.argv)
