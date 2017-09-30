@@ -488,7 +488,7 @@ class MainApp(QMainWindow):
         
         self.showMaximized()
         # app title
-        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v1.0')
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | v1.0.1')
         # app icon
         self.setWindowIcon(QIcon(logo_icon))
         # update status bar
@@ -533,6 +533,13 @@ class MainApp(QMainWindow):
         # clear the search bar
         self.searchbox.setText('')
 
+        # remove search bar stylings
+        self.searchbox.setStyleSheet('''
+            QLineEdit {
+                background-color: rgb(255, 255, 255);
+            }
+        ''')
+
         # clear previous rows
         self.entry_table.setRowCount(0)
 
@@ -548,13 +555,8 @@ class MainApp(QMainWindow):
         self.status_bar.clearMessage()
         self.status_bar.addPermanentWidget(self.progress_bar)
 
-        # remove searchbox stylings
-        self.searchbox.setStyleSheet('''
-            QLineEdit {
-                background-color: rgb(255, 255, 255);
-            }
-        ''')
-
+        self.setWindowTitle('Harshark | HTTP Archive (HAR) Viewer | {}'.format(self.file_name))
+        
         self.harParseEntries()
 
 
@@ -650,14 +652,14 @@ class MainApp(QMainWindow):
     def openFile(self):
         """File open dialog window"""
         file_name = QFileDialog.getOpenFileName(self, 'Open file')
-        file_name = file_name[0]
+        self.file_name = file_name[0]
         
         # no file selected
-        if not file_name:
+        if not self.file_name:
             return
         
         try:
-            with open(file_name, 'r', encoding='utf-8-sig') as har:
+            with open(self.file_name, 'r', encoding='utf-8-sig') as har:
                 self.har = json.load(har)
         except json.decoder.JSONDecodeError:
             self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
@@ -1347,8 +1349,7 @@ class MainApp(QMainWindow):
             ''')
 
         self.status_bar.clearMessage()
-        
-        
+
 
     def searchResponse(self):
         """Search in the active response tab."""
