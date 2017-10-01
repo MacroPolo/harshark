@@ -10,6 +10,7 @@ Usage:
 
 """
 
+import ctypes
 import io
 import json
 import os
@@ -132,6 +133,11 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         # ICONS
         # ---------------------------------------------------------
+
+        # allow icon to be displayed correctly(?) on Windows taskbar
+        if os.name == 'nt':
+            harshark_id = 'harshark.1.0.1'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(harshark_id)
 
         cwd = os.path.dirname(__file__)
 
@@ -703,6 +709,10 @@ class MainApp(QMainWindow):
 
         # clear old data from the text boxes
         self.clearTextEdit()
+
+        # clear highlights from the text boxes
+        self.clearSearchTabs('req')
+        self.clearSearchTabs('res')
 
         # clear any searchbox stylings
         self.request_searchbox.setStyleSheet('''
