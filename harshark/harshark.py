@@ -291,8 +291,8 @@ class MainApp(QMainWindow):
         searchbox_lbl.setMargin(5)
         
         self.searchbox = QLineEdit(self)
-        self.searchbox.setPlaceholderText('Enter search query here to find matches')
-        self.searchbox.setStatusTip('Highlight or filter requests which contain search term')
+        self.searchbox.setPlaceholderText('Enter a search query... (F3 for next match)')
+        self.searchbox.setStatusTip('Enter a search query here to highlight of filter matches')
         self.searchbox.returnPressed.connect(self.searchEntries)
 
         self.searchmode = QComboBox()
@@ -451,8 +451,8 @@ class MainApp(QMainWindow):
         self.request_searchbox = QLineEdit(self)
         self.response_searchbox = QLineEdit(self)
 
-        self.request_searchbox.setPlaceholderText('Enter search query here to highlight matches')
-        self.response_searchbox.setPlaceholderText('Enter search query here to highlight matches')
+        self.request_searchbox.setPlaceholderText('Enter a search query... (F5 for next match)')
+        self.response_searchbox.setPlaceholderText('Enter a search query... (F6 for next match)')
         
         self.request_searchbox.returnPressed.connect(self.searchRequest)
         self.response_searchbox.returnPressed.connect(self.searchResponse)
@@ -1125,7 +1125,9 @@ class MainApp(QMainWindow):
 
 
     def clearSearch(self):
-        """Remove any highlight or filter from the entries table."""
+        """Remove any highlight or filter from the entries table and 
+        request/response tabs.
+        """
         column_count = self.entry_table.columnCount()
         row_count = self.entry_table.rowCount()
 
@@ -1143,6 +1145,10 @@ class MainApp(QMainWindow):
                 background-color: rgb(255, 255, 255);
             }
         ''')
+
+        # cleanup request/response tabs
+        self.clearSearchTabs('req')
+        self.clearSearchTabs('res')
 
 
     def previousMatch(self):
