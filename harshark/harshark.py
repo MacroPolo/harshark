@@ -627,7 +627,12 @@ class MainApp(QMainWindow):
                 if j in self.numeric_columns:
                     # truncate any decimals on 'time' column
                     if j == 2:
-                        item = TableWidgetItem(str(int(item)), item)
+                        # "time" can be set to null
+                        try:
+                            item = TableWidgetItem(str(int(item)), item)
+                        except TypeError:
+                            item = TableWidgetItem('-1', -1)
+                            pass
                         self.entry_table.setItem(i, j, item)
                     else:
                         item = TableWidgetItem(str(item), item)
