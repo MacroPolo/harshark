@@ -672,7 +672,10 @@ class MainApp(QMainWindow):
         try:
             with open(self.file_name, 'r', encoding='utf-8-sig') as har:
                 self.har = json.load(har)
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError:    # json is weird
+            self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
+            return
+        except UnicodeDecodeError:  # probably a binary
             self.status_bar.showMessage('Cannot open selected file. Please select a valid HAR file.')
             return
                 
