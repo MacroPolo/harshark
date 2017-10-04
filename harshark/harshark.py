@@ -923,6 +923,7 @@ class MainApp(QMainWindow):
             self.display_mode = 1
         else:
             self.display_mode = 0
+        self.selectRow()
 
 
     def toggleCase(self):
