@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Harshark Development Build: A simple, offline HAR viewer.
+"""Harshark: A simple, offline HAR viewer.
 
 Usage:
     $ python3 harshark.py
@@ -464,7 +464,7 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         # KICKUP
         # ---------------------------------------------------------
-        self.setWindowTitle('Harshark 2.0.0 (dev) | HTTP Archive (HAR) Viewer')
+        self.setWindowTitle('Harshark 2.0.0 | HTTP Archive (HAR) Viewer')
         self.setWindowIcon(app_icon)
         self.showMaximized()
         self.show()

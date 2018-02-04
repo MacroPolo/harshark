@@ -1,7 +1,6 @@
-*.har
-*.pyc
-*.pyproj*
-*.sln
+.vs/
 env/
 samples/
-.vs/
+vs/
+*.har
+*.pyc
