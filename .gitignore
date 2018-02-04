@@ -1,6 +1,7 @@
-Include/
-Lib/
-Scripts/
-tcl/
-pip-selfcheck.json
-harshark/.vscode/
+*.har
+*.pyc
+*.pyproj*
+*.sln
+env/
+samples/
+.vs/

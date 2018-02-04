@@ -1,0 +1,2 @@
+class HarImportException(BaseException):
+    pass
