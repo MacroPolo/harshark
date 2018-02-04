@@ -1,6 +1,3 @@
-Branch Testing
-More Testing
-
 # Harshark
 
 Harshark is a simple, offline HTTP Archive (HAR) file viewer built with Python 3.
