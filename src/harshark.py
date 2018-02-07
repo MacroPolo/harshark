@@ -40,6 +40,7 @@ from PyQt5.QtWidgets import QWidget
 
 import configmgr
 import style
+from actions.aboutdialog import AboutDialog
 from actions.columnselectdialog import ColumnSelectDialog
 from actions.entryselector import EntrySelector
 from actions.fileimporter import FileImporter
@@ -173,6 +174,16 @@ class MainApp(QMainWindow):
 
         self.action_enable_saml.triggered.connect(self.toggleSaml)
         menubar_options.addAction(self.action_enable_saml)
+
+        # ------------
+        # Help Menu
+        # ------------
+
+        # about
+
+        action_about = QAction('&About Harshark', self, statusTip='View program information')
+        action_about.triggered.connect(self.aboutDialog)
+        menubar_help.addAction(action_about)
 
         # ---------------------------------------------------------
         # TOOLBARS
@@ -572,6 +583,9 @@ class MainApp(QMainWindow):
 
         active_tab_textedit.setTextCursor(next_match)
         active_tab_textedit.setFocus()
+
+    def aboutDialog(self):
+        AboutDialog(self)
 
 def main():
     app = QApplication(sys.argv)
