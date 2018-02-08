@@ -38,6 +38,18 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.0.1 (8-Feb-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+N/A
+
+BUG FIXES:
+* SAML parsing failures should no longer crash the program. Instead, the SAML request/response tab will indicate that we weren't able to parse the SAML.
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.0.0 (4-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
@@ -51,10 +63,10 @@ NEW FEATURES:
 * [Experimental] SAML Request and Response parsing.
 
 BUG FIXES:
+N/A
 
 NOTES:
-
-"""
+N/A"""
 
     def __init__(self, app):
         super().__init__()

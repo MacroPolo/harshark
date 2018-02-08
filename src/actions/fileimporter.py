@@ -257,7 +257,7 @@ class FileImporter():
         elapsed_time = import_stop - self.import_start
 
         self.app.statusbar.showMessage('[OK] Imported {} entries in {:.1f} seconds'.format(row_count, elapsed_time))
-        self.app.setWindowTitle('Harshark 2.0.0 | HTTP Archive (HAR) Viewer | {}'.format(self.har_path))
+        self.app.setWindowTitle('Harshark 2.0.1 | HTTP Archive (HAR) Viewer | {}'.format(self.har_path))
 
     @staticmethod
     def _parseCookies(headers):
