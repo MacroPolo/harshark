@@ -84,6 +84,7 @@ class MainApp(QMainWindow):
         sort_icon = QIcon(os.path.join(icon_path, 'sort-alpha-down.svg'))
         colour_icon = QIcon(os.path.join(icon_path, 'paint-brush.svg'))
         saml_icon = QIcon(os.path.join(icon_path, 'exclamation-triangle.svg'))
+        self.about_icon = QIcon(os.path.join(icon_path, 'question-circle.svg'))
         self.column_select_icon = QIcon(os.path.join(icon_path, 'columns.svg'))
 
         # ---------------------------------------------------------
@@ -181,7 +182,8 @@ class MainApp(QMainWindow):
 
         # about
 
-        action_about = QAction('&About Harshark', self, statusTip='View program information')
+        action_about = QAction('&About Harshark', self, icon=self.about_icon,
+                               statusTip='View program information')
         action_about.triggered.connect(self.aboutDialog)
         menubar_help.addAction(action_about)
 

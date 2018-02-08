@@ -105,9 +105,9 @@ N/A"""
 
         self.setLayout(main_layout)
         self.setWindowTitle("About Harshark")
+        self.setWindowIcon(self.app.about_icon)
         self.setWindowModality(Qt.ApplicationModal)
         self.resize(700 , 400)
-        #self.setWindowIcon(self.app.column_select_icon)
         self.setStyleSheet("""
             QPlainTextEdit {
                     font-family: "Consolas";
