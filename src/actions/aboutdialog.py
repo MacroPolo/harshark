@@ -37,21 +37,23 @@ SOFTWARE.
 
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
-Software description.
-
 ---------------------------------------------------------------------
-Release 2.0.0 (dd-mmmm-yyyy)
+Release 2.0.0 (4-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
-* Foo
-* Bar
+* Complete code rebuild from Harshark 1.
+* Open, view and analyse HAR files complient with the v1.1 and v1.2 standard.
+* Customise which columns you would like to view.
+* Cell colourization for interesting information (status code, protocol etc).
+* View detailed request and response information for each entry found in the HAR file.
+* Sort request and response headers alphabetically.
+* Ability to search for keywords across all entries and also within a single entry.
+* [Experimental] SAML Request and Response parsing.
 
 BUG FIXES:
-* Foo
-* Bar
 
 NOTES:
-* Foo Bar
+
 """
 
     def __init__(self, app):
