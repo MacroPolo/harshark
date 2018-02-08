@@ -257,7 +257,7 @@ class FileImporter():
         elapsed_time = import_stop - self.import_start
 
         self.app.statusbar.showMessage('[OK] Imported {} entries in {:.1f} seconds'.format(row_count, elapsed_time))
-        self.app.setWindowTitle('Harshark 2.0.0 | HTTP Archive (HAR) Viewer | {}'.format(self.har_path))
+        self.app.setWindowTitle('Harshark 2.0.1 | HTTP Archive (HAR) Viewer | {}'.format(self.har_path))
 
     @staticmethod
     def _parseCookies(headers):
@@ -280,20 +280,27 @@ class FileImporter():
         """Decode any SAML request/response messages found in  the query string (HTTP-Redirect binding)
         or body text (HTTP-POST binding).
         """
+
         if saml_type == 'request':
             for param in saml:
                 if param['name'].lower() == 'samlrequest':
-                    request_decoded = b64decode(param['value'])
-                    request_decompressed = decompress(request_decoded, -15).decode('utf-8')
-                    return request_decompressed
+                    try:
+                        request_decoded = b64decode(param['value'])
+                        request_decompressed = decompress(request_decoded, -15).decode('utf-8')
+                        return request_decompressed
+                    except:
+                        return 'Couldn\'t parse SAML request.'
 
         elif saml_type == 'response':
             # TODO: what if we don't have a relaystate included? Regex needs improved.
             saml_response = re.search(r'(?<=SAMLResponse\=).+(?=\&RelayState.+)', saml)
             if saml_response:
                 response_encoded = saml_response.group().replace('%2B', '+')
-                response_decoded = b64decode(response_encoded).decode('utf-8')
-                return response_decoded
+                try:
+                    response_decoded = b64decode(response_encoded).decode('utf-8')
+                    return response_decoded
+                except:
+                    return 'Couldn\'t parse SAML response.'
 
         return ''
 

@@ -40,6 +40,7 @@ from PyQt5.QtWidgets import QWidget
 
 import configmgr
 import style
+from actions.aboutdialog import AboutDialog
 from actions.columnselectdialog import ColumnSelectDialog
 from actions.entryselector import EntrySelector
 from actions.fileimporter import FileImporter
@@ -83,6 +84,7 @@ class MainApp(QMainWindow):
         sort_icon = QIcon(os.path.join(icon_path, 'sort-alpha-down.svg'))
         colour_icon = QIcon(os.path.join(icon_path, 'paint-brush.svg'))
         saml_icon = QIcon(os.path.join(icon_path, 'exclamation-triangle.svg'))
+        self.about_icon = QIcon(os.path.join(icon_path, 'question-circle.svg'))
         self.column_select_icon = QIcon(os.path.join(icon_path, 'columns.svg'))
 
         # ---------------------------------------------------------
@@ -173,6 +175,17 @@ class MainApp(QMainWindow):
 
         self.action_enable_saml.triggered.connect(self.toggleSaml)
         menubar_options.addAction(self.action_enable_saml)
+
+        # ------------
+        # Help Menu
+        # ------------
+
+        # about
+
+        action_about = QAction('&About Harshark', self, icon=self.about_icon,
+                               statusTip='View program information')
+        action_about.triggered.connect(self.aboutDialog)
+        menubar_help.addAction(action_about)
 
         # ---------------------------------------------------------
         # TOOLBARS
@@ -464,7 +477,7 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         # KICKUP
         # ---------------------------------------------------------
-        self.setWindowTitle('Harshark 2.0.0 | HTTP Archive (HAR) Viewer')
+        self.setWindowTitle('Harshark 2.0.1 | HTTP Archive (HAR) Viewer')
         self.setWindowIcon(app_icon)
         self.showMaximized()
         self.show()
@@ -572,6 +585,9 @@ class MainApp(QMainWindow):
 
         active_tab_textedit.setTextCursor(next_match)
         active_tab_textedit.setFocus()
+
+    def aboutDialog(self):
+        AboutDialog(self)
 
 def main():
     app = QApplication(sys.argv)
