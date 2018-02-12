@@ -7,7 +7,7 @@ correctly saves network captures as JSON rather than XML.
 
 ## Installation
 
-**Python Version**: Python 3 (tested with 3.5 and 3.6)
+**Python Version**: Python 3 (tested with 3.5 and 3.6)  
 **Dependencies**: PyQt5
 
 To install, simply clone this repository and then install PyQt5.
@@ -18,7 +18,7 @@ pip3 install -r requirements.txt
 
 ## Usage
 ```bash
-$ python3 harshark/src/harshark.py
+$ python3 src/harshark.py
 ```
 ## User Guide
 
@@ -47,7 +47,7 @@ $ python3 harshark/src/harshark.py
 
 ### Entries Table
 
-The entries table shows information about each request found in the HAR file. Column descriptions have been derived from the official HAR specification [here](http://www.softwareishard.com/blog/har-12-spec/#response)
+The entries table shows information about each request found in the HAR file. Column descriptions have been derived from the official HAR specification [here](http://www.softwareishard.com/blog/har-12-spec/#response).
 
 | Column  | Description |
 | ------------- | ------------- |
