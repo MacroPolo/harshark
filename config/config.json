@@ -101,7 +101,7 @@
             "category": "Response",
             "index": 17,
             "name": "Response Body Size (Uncompressed)",
-            "visible": false
+            "visible": true
         },
         "response-header-szie": {
             "category": "Response",
