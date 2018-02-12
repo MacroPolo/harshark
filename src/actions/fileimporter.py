@@ -181,6 +181,8 @@ class FileImporter():
     def _populateTable(self):
         """Generate the main entries table from the parsed HAR data."""
 
+        self.app.entries_table.setSortingEnabled(False)
+
         column_details = self.app.config.getConfig('table_columns')
         column_details = sorted(column_details.items(), key=lambda column: column[1]['index'])
 

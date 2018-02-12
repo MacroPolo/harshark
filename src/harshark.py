@@ -477,7 +477,7 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         # KICKUP
         # ---------------------------------------------------------
-        self.setWindowTitle('Harshark 2.0.1 | HTTP Archive (HAR) Viewer')
+        self.setWindowTitle('Harshark 2.0.2 | HTTP Archive (HAR) Viewer')
         self.setWindowIcon(app_icon)
         self.showMaximized()
         self.show()
