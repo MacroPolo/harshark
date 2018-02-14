@@ -46,6 +46,8 @@ N/A
 BUG FIXES:
 * Entries table no longer gets out of sync after sorting columns when importing a new HAR file.
 * Previous search results are now cleared when opening a new HAR file.
+* Un-truncating body content after a search has been applied no longer highlights all text.
+* Statusbar now shows search result details even when the active row is not the first row.
 
 NOTES:
 N/A
