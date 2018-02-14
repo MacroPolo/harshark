@@ -26,13 +26,14 @@ class GlobalSearch():
             match_count = len(self.found_rows)
             search_stop = time.time()
             elapsed_time = search_stop - search_start
-            self.app.statusbar.showMessage('Search Result: Found {} matching entries in {:.1f} seconds.'.format(match_count, elapsed_time))
 
         if self.found_rows:
             self.app.entries_table.selectRow(self.found_rows[0])
             self.app.entries_table.setFocus()
             self.app.next_match_entries.setEnabled(True)
             self.app.clear_match_entries.setEnabled(True)
+        
+        self.app.statusbar.showMessage('Search Result: Found {} matching entries in {:.1f} seconds.'.format(match_count, elapsed_time))
 
     def _searchEntries(self):
         for k, v in self.app.har_parsed.items():

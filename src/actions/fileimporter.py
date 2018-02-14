@@ -181,6 +181,9 @@ class FileImporter():
     def _populateTable(self):
         """Generate the main entries table from the parsed HAR data."""
 
+        # sorting needs to be disabled here or bad things happen when loading a new HAR file
+        self.app.entries_table.setSortingEnabled(False)
+
         column_details = self.app.config.getConfig('table_columns')
         column_details = sorted(column_details.items(), key=lambda column: column[1]['index'])
 
@@ -190,7 +193,7 @@ class FileImporter():
         self.app.entries_table.setHorizontalHeaderLabels(table_headers)
         self.app.entries_table.setRowCount(0)
 
-        # disable screen painting until the entry table has been populated.
+        # disable screen painting to reduce flicker
         self.app.entries_table.setUpdatesEnabled(False)
 
         row_current = 0
@@ -231,16 +234,33 @@ class FileImporter():
 
     def _finalise(self):
 
+        # clear previous search results
+        self.app.global_results = None
+        self.app.request_results = None
+        self.app.response_results = None
+
+        # disable searching actions
+        self.app.next_match_entries.setEnabled(False)
+        self.app.clear_match_entries.setEnabled(False)
+        self.app.next_match_request_btn.setEnabled(False)
+        self.app.clear_match_request_btn.setEnabled(False)
+        self.app.next_match_response_btn.setEnabled(False)
+        self.app.clear_match_response_btn.setEnabled(False)
+
+        # organise the columns
         toggleColumnVisibility(self.app)
         resizeColumns(self.app)
 
+        # cell colourization
         if self.app.config.getConfig('cell-colorization'):
             colourizeCells(self.app)
 
+        # unlock the search filters
         self.app.global_searchbox.setReadOnly(False)
         self.app.request_filter.setReadOnly(False)
         self.app.response_filter.setReadOnly(False)
 
+        # enable the header tabs
         self.app.request_tabs.setTabEnabled(0, True)
         self.app.response_tabs.setTabEnabled(0, True)
 
@@ -249,7 +269,7 @@ class FileImporter():
         self.app.entries_table.selectRow(0)
         self.app.entries_table.setFocus()
 
-        # turn screen paining back on
+        # turn screen painting back on
         self.app.entries_table.setUpdatesEnabled(True)
 
         row_count = self.app.entries_table.rowCount()
@@ -257,7 +277,7 @@ class FileImporter():
         elapsed_time = import_stop - self.import_start
 
         self.app.statusbar.showMessage('[OK] Imported {} entries in {:.1f} seconds'.format(row_count, elapsed_time))
-        self.app.setWindowTitle('Harshark 2.0.1 | HTTP Archive (HAR) Viewer | {}'.format(self.har_path))
+        self.app.setWindowTitle('Harshark {} | HTTP Archive (HAR) Viewer | {}'.format(self.app.version, self.har_path))
 
     @staticmethod
     def _parseCookies(headers):

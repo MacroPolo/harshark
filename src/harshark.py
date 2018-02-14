@@ -59,6 +59,7 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.version = '2.0.2'
         self.config = configmgr.ConfigMgr()
         self.har_summary = None
         self.har_parsed = None
@@ -229,7 +230,7 @@ class MainApp(QMainWindow):
         self.next_match_entries.triggered.connect(self.nextMatchGlobal)
         toolbar_search.addAction(self.next_match_entries)
 
-        # global serach: clear highlights
+        # global search: clear highlights
         self.clear_match_entries = QAction('Clear search', self, enabled=False, icon=clear_icon,
                                            toolTip='Clear search results')
         self.clear_match_entries.triggered.connect(self.clearMatchGlobal)
@@ -477,7 +478,7 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         # KICKUP
         # ---------------------------------------------------------
-        self.setWindowTitle('Harshark 2.0.1 | HTTP Archive (HAR) Viewer')
+        self.setWindowTitle('Harshark {} | HTTP Archive (HAR) Viewer'.format(self.version))
         self.setWindowIcon(app_icon)
         self.showMaximized()
         self.show()

@@ -115,12 +115,14 @@ def expandBody(app, body_type):
     entry_data = app.har_parsed[row_id]
 
     if body_type == 'request':
+        clearTabSearch(app, 'request')
         post_body = entry_data['request_postData_text']
         app.request_expand_button.hide()
         app.request_body_tab_text.setPlainText('')
         app.request_body_tab_text.appendPlainText(post_body)
         app.request_body_tab_text.moveCursor(QTextCursor.Start)
     else:
+        clearTabSearch(app, 'response')
         response_body = entry_data['response_content_text']
         app.response_expand_button.hide()
         app.response_body_tab_text.setPlainText('')
