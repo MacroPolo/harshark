@@ -38,13 +38,14 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
-Release 2.0.2 (12-Feb-2018)
+Release 2.0.2 (14-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
 N/A
 
 BUG FIXES:
-* Entries table no longer gets out of sync after sorting columns when importing a new HAR file
+* Entries table no longer gets out of sync after sorting columns when importing a new HAR file.
+* Previous search results are now cleared when opening a new HAR file.
 
 NOTES:
 N/A
