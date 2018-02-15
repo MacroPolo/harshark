@@ -5,6 +5,7 @@ import string
 import time
 
 from base64 import b64decode
+from lxml import etree
 from zlib import decompress
 
 from PyQt5.QtWidgets import QFileDialog
@@ -156,14 +157,14 @@ class FileImporter():
 
             # SAML requests and responses
 
-            entry_parsed['request_saml'] = ''
-            entry_parsed['response_saml'] = ''
+            entry_parsed['saml_request'] = ''
+            entry_parsed['saml_response'] = ''
 
             if self.app.config.getConfig('experimental-saml'):
                 if entry_parsed['request_queryString']:
-                    entry_parsed['request_saml'] = self._parseSaml(entry_parsed['request_queryString'], 'request')
+                    entry_parsed['saml_request'] = self._parseSaml(entry_parsed['request_queryString'], 'request')
                 if entry_parsed['request_postData_text']:
-                    entry_parsed['response_saml'] = self._parseSaml(entry_parsed['request_postData_text'], 'response')
+                    entry_parsed['saml_response'] = self._parseSaml(entry_parsed['request_postData_text'], 'response')
                 
             # HAR files don't have a unique ID for each request so let's make one to be used
             # for indexing later.
@@ -307,18 +308,24 @@ class FileImporter():
                     try:
                         request_decoded = b64decode(param['value'])
                         request_decompressed = decompress(request_decoded, -15).decode('utf-8')
-                        return request_decompressed
+                        request_decompressed = request_decompressed.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+                        request_formatted = etree.fromstring(request_decompressed)
+                        request_formatted = etree.tostring(request_formatted, pretty_print=True).decode()
+                        return request_formatted
                     except:
                         return 'Couldn\'t parse SAML request.'
 
         elif saml_type == 'response':
-            # TODO: what if we don't have a relaystate included? Regex needs improved.
-            saml_response = re.search(r'(?<=SAMLResponse\=).+(?=\&RelayState.+)', saml)
+            saml_response = re.search(r'(?<=SAMLResponse\=)[A-Za-z0-9\%\+\=\/]+', saml)
             if saml_response:
-                response_encoded = saml_response.group().replace('%2B', '+')
+                response_encoded = saml_response.group()
+                response_encoded = response_encoded.replace('%2B', '+').replace('%3D', '=').replace('%0A', '').replace('%0D', '')
                 try:
                     response_decoded = b64decode(response_encoded).decode('utf-8')
-                    return response_decoded
+                    response_decoded = response_decoded.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+                    response_formatted = etree.fromstring(response_decoded)
+                    response_formatted = etree.tostring(response_formatted, pretty_print=True).decode()
+                    return response_formatted
                 except:
                     return 'Couldn\'t parse SAML response.'
 

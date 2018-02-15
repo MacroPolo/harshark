@@ -20,7 +20,6 @@ class EntrySelector():
         self._populateResponseHeaders()
         self._populateResponseCookies()
         self._populateResponseBody()
-        self._populateResponseSaml()
 
     def _collectData(self):
         row_id = self.app.entries_table.item(self.app.entries_table.currentRow(), 0).text()
@@ -93,8 +92,14 @@ class EntrySelector():
         self._toggleTabVisibility(self.app.request_tabs, self.app.request_body_tab_text, 3)
     
     def _populateRequestSaml(self):
-        saml_data = self.entry_data['request_saml']
-        self.app.request_saml_tab_text.appendPlainText(saml_data)
+        saml_request = self.entry_data['saml_request']
+        saml_response = self.entry_data['saml_response']
+        
+        if saml_request:
+            self.app.request_saml_tab_text.appendPlainText(saml_request)
+        else:
+            self.app.request_saml_tab_text.appendPlainText(saml_response)
+        
         self.app.request_saml_tab_text.moveCursor(QTextCursor.Start)
         self._toggleTabVisibility(self.app.request_tabs, self.app.request_saml_tab_text, 4)
 
@@ -146,12 +151,6 @@ class EntrySelector():
 
         self.app.response_body_tab_text.moveCursor(QTextCursor.Start)
         self._toggleTabVisibility(self.app.response_tabs, self.app.response_body_tab_text, 2)
-
-    def _populateResponseSaml(self):
-        saml_data = self.entry_data['response_saml']
-        self.app.response_saml_tab_text.appendPlainText(saml_data)
-        self.app.response_saml_tab_text.moveCursor(QTextCursor.Start)
-        self._toggleTabVisibility(self.app.response_tabs, self.app.response_saml_tab_text, 3)
 
     @staticmethod
     def _toggleTabVisibility(tab, text_edit, position):
