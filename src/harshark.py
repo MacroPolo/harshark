@@ -59,7 +59,7 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.version = '2.0.2'
+        self.version = '2.1.0'
         self.config = configmgr.ConfigMgr()
         self.har_summary = None
         self.har_parsed = None
@@ -347,29 +347,24 @@ class MainApp(QMainWindow):
         response_headers_tab = QWidget()
         response_body_tab = QWidget()
         response_cookie_tab = QWidget()
-        response_saml_tab = QWidget()
 
         self.response_tabs.addTab(response_headers_tab, 'Headers')
         self.response_tabs.addTab(response_cookie_tab, 'Cookies')
         self.response_tabs.addTab(response_body_tab, 'Body')
-        self.response_tabs.addTab(response_saml_tab, 'SAML')
 
         self.response_tabs.setTabEnabled(0, False)
         self.response_tabs.setTabEnabled(1, False)
         self.response_tabs.setTabEnabled(2, False)
-        self.response_tabs.setTabEnabled(3, False)
 
         self.response_headers_tab_text = QTextEdit(readOnly=True)
         self.response_cookie_tab_text = QTextEdit(readOnly=True)
         self.response_body_tab_text = QPlainTextEdit(readOnly=True)
-        self.response_saml_tab_text = QPlainTextEdit(readOnly=True)
 
         # ROBUSTNESS :: We index into this list from a few areas so UI order must be
         # preserved. Can this be made less fragile?
         self.response_textedits = [self.response_headers_tab_text,
                                    self.response_cookie_tab_text,
-                                   self.response_body_tab_text,
-                                   self.response_saml_tab_text]
+                                   self.response_body_tab_text]
 
         for textedit in self.response_textedits:
             if not word_wrap:
@@ -378,7 +373,6 @@ class MainApp(QMainWindow):
         response_headers_tab_layout = QVBoxLayout()
         self.response_body_tab_layout = QVBoxLayout()
         response_cookie_tab_layout = QVBoxLayout()
-        response_saml_tab_layout = QVBoxLayout()
 
         self.response_expand_button = QPushButton(truncate_button_text)
         self.response_expand_button.hide()
@@ -392,9 +386,6 @@ class MainApp(QMainWindow):
 
         response_cookie_tab_layout.addWidget(self.response_cookie_tab_text)
         response_cookie_tab.setLayout(response_cookie_tab_layout)
-
-        response_saml_tab_layout.addWidget(self.response_saml_tab_text)
-        response_saml_tab.setLayout(response_saml_tab_layout)
 
         # un-truncate response body
         self.response_expand_button.clicked.connect(lambda: expandBody(self, 'response'))
@@ -504,17 +495,13 @@ class MainApp(QMainWindow):
         current = self.config.getConfig('word-wrap')
         self.config.setConfig('word-wrap', not current)
 
-        for req_textedit, res_textedit in itertools.zip_longest(self.request_textedits,
-                                                                self.response_textedits):
-            try:
-                if not current:
-                    req_textedit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
-                    res_textedit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
-                else:
-                    req_textedit.setWordWrapMode(QTextOption.NoWrap)
-                    res_textedit.setWordWrapMode(QTextOption.NoWrap)
-            except AttributeError:
-                break
+        all_textedits = self.request_textedits + self.response_textedits
+
+        for textedit in all_textedits:
+            if not current:
+                textedit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            else:
+                textedit.setWordWrapMode(QTextOption.NoWrap)
 
     def toggleSort(self):
         current = self.config.getConfig('sort-headers')

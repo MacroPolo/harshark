@@ -8,9 +8,9 @@ correctly saves network captures as JSON rather than XML.
 ## Installation
 
 **Python Version**: Python 3 (tested with 3.5 and 3.6)  
-**Dependencies**: PyQt5
+**Dependencies**: PyQt5, lxml
 
-To install, simply clone this repository and then install PyQt5.
+To install, simply clone this repository and then install the dependencies.
 ```
 git clone https://github.com/MacroPolo/harshark.git
 pip3 install -r requirements.txt
