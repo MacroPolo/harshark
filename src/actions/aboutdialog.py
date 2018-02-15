@@ -38,6 +38,22 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.1.0 (15-Feb-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+* SAML parsing is now a lot more robust and should be able to handle a 
+wider variety of inputs. Feature is staying as experimental for now
+until it has been tested further.
+* SAML request and response content is now pretty printed.
+
+BUG FIXES:
+* SAML Response content now correctly shows in the Request tab group
+rather than the response group.
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.0.2 (14-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
@@ -59,7 +75,8 @@ NEW FEATURES:
 N/A
 
 BUG FIXES:
-* SAML parsing failures should no longer crash the program. Instead, the SAML request/response tab will indicate that we weren't able to parse the SAML.
+* SAML parsing failures should no longer crash the program. Instead, the SAML request/response 
+tab will indicate that we weren't able to parse the SAML.
 
 NOTES:
 N/A
