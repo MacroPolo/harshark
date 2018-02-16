@@ -118,15 +118,6 @@ class FileImporter():
             entry_parsed['response_headersSize'] = entry.get('response', {}).get('headersSize', -1)
             entry_parsed['response_bodySize'] = entry.get('response', {}).get('bodySize', -1)
 
-            entry_parsed['cache_beforeRequest_expires'] = entry.get('cache', {}).get('beforeRequest', {}).get('expires','')
-            entry_parsed['cache_beforeRequest_lastAccess'] = entry.get('cache', {}).get('beforeRequest', {}).get('lastAccess','')
-            entry_parsed['cache_beforeRequest_eTag'] = entry.get('cache', {}).get('beforeRequest', {}).get('eTag','')
-            entry_parsed['cache_beforeRequest_hitCount'] = entry.get('cache', {}).get('beforeRequest', {}).get('hitCount',-1)
-            entry_parsed['cache_afterRequest_expires'] = entry.get('cache', {}).get('afterRequest', {}).get('expires','')
-            entry_parsed['cache_afterRequest_lastAccess'] = entry.get('cache', {}).get('afterRequest', {}).get('lastAccess','')
-            entry_parsed['cache_afterRequest_eTag'] = entry.get('cache', {}).get('afterRequest', {}).get('eTag','')
-            entry_parsed['cache_afterRequest_hitCount'] = entry.get('cache', {}).get('afterRequest', {}).get('hitCount',-1)
-
             entry_parsed['timings_blocked'] = entry.get('timings', {}).get('blocked', -1)
             entry_parsed['timings_dns'] = entry.get('timings', {}).get('dns', -1)
             entry_parsed['timings_connect'] = entry.get('timings', {}).get('connect', -1)
@@ -134,6 +125,30 @@ class FileImporter():
             entry_parsed['timings_wait'] = entry.get('timings', {}).get('wait', -1)
             entry_parsed['timings_receive'] = entry.get('timings', {}).get('receive', -1)
             entry_parsed['timings_ssl'] = entry.get('timings', {}).get('ssl', -1)
+
+            # not using cache information at the moment
+
+            #if entry.get('cache', {}).get('beforeRequest', {}) is not None:
+            #    entry_parsed['cache_beforeRequest_expires'] = entry.get('cache', {}).get('beforeRequest', {}).get('expires', '')
+            #    entry_parsed['cache_beforeRequest_lastAccess'] = entry.get('cache', {}).get('beforeRequest', {}).get('lastAccess', '')
+            #    entry_parsed['cache_beforeRequest_eTag'] = entry.get('cache', {}).get('beforeRequest', {}).get('eTag', '')
+            #    entry_parsed['cache_beforeRequest_hitCount'] = entry.get('cache', {}).get('beforeRequest', {}).get('hitCount', -1)
+            #else:
+            #    entry_parsed['cache_beforeRequest_expires'] = 'None'
+            #    entry_parsed['cache_beforeRequest_lastAccess'] = 'None'
+            #    entry_parsed['cache_beforeRequest_eTag'] = 'None'
+            #    entry_parsed['cache_beforeRequest_hitCount'] = 'None'
+
+            #if entry.get('cache', {}).get('afterRequest', {}) is not None:
+            #    entry_parsed['cache_afterRequest_expires'] = entry.get('cache', {}).get('afterRequest', {}).get('expires', '')
+            #    entry_parsed['cache_afterRequest_lastAccess'] = entry.get('cache', {}).get('afterRequest', {}).get('lastAccess', '')
+            #    entry_parsed['cache_afterRequest_eTag'] = entry.get('cache', {}).get('afterRequest', {}).get('eTag', '')
+            #    entry_parsed['cache_afterRequest_hitCount'] = entry.get('cache', {}).get('afterRequest', {}).get('hitCount', -1)
+            #else:
+            #    entry_parsed['cache_afterRequest_expires'] = 'None'
+            #    entry_parsed['cache_afterRequest_lastAccess'] = 'None'
+            #    entry_parsed['cache_afterRequest_eTag'] = 'None'
+            #    entry_parsed['cache_afterRequest_hitCount'] = 'None'
 
             ##################################
             # start of custom HAR parsing logic
