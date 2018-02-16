@@ -145,9 +145,12 @@ class FileImporter():
             if entry_parsed['response_bodySize'] is None:
                 entry_parsed['response_bodySize'] = -1
 
-            # extract the request protocol
-            request_protocol = re.match(r'https?', entry_parsed['request_url'])
-            entry_parsed['request_protocol'] = request_protocol.group()
+            # extract the URI scheme
+            request_protocol = re.match(r'^[a-z]+(?=\:)', entry_parsed['request_url'])
+            if request_protocol.group():
+                entry_parsed['request_protocol'] = request_protocol.group()
+            else:
+                entry_parsed['Unknown']
 
             # extract cookie info from headers if cookies object is empty
             if not entry_parsed['request_cookies']:
