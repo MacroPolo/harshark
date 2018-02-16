@@ -24,7 +24,10 @@ class ConfigMgr(object):
             },
             "protocol": {
               "http": "#fdb462",
-              "https": "#ffffff"
+              "https": "#ffffff",
+              "wss": "#ccebc5",
+              "ws": "#fdb462",
+              "ftp": "#80b1d3"
             },
             "search_match": "#ffff99",
             "status": {
@@ -134,7 +137,7 @@ class ConfigMgr(object):
               "category": "Response",
               "index": 9,
               "name": "Status Text",
-              "visible": True
+              "visible": False
             },
             "time-blocked": {
               "category": "Timing",

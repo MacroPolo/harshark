@@ -5,7 +5,7 @@ import string
 import time
 
 from base64 import b64decode
-from lxml import etree
+from bs4 import BeautifulSoup
 from zlib import decompress
 
 from PyQt5.QtWidgets import QFileDialog
@@ -118,15 +118,6 @@ class FileImporter():
             entry_parsed['response_headersSize'] = entry.get('response', {}).get('headersSize', -1)
             entry_parsed['response_bodySize'] = entry.get('response', {}).get('bodySize', -1)
 
-            entry_parsed['cache_beforeRequest_expires'] = entry.get('cache', {}).get('beforeRequest', {}).get('expires','')
-            entry_parsed['cache_beforeRequest_lastAccess'] = entry.get('cache', {}).get('beforeRequest', {}).get('lastAccess','')
-            entry_parsed['cache_beforeRequest_eTag'] = entry.get('cache', {}).get('beforeRequest', {}).get('eTag','')
-            entry_parsed['cache_beforeRequest_hitCount'] = entry.get('cache', {}).get('beforeRequest', {}).get('hitCount',-1)
-            entry_parsed['cache_afterRequest_expires'] = entry.get('cache', {}).get('afterRequest', {}).get('expires','')
-            entry_parsed['cache_afterRequest_lastAccess'] = entry.get('cache', {}).get('afterRequest', {}).get('lastAccess','')
-            entry_parsed['cache_afterRequest_eTag'] = entry.get('cache', {}).get('afterRequest', {}).get('eTag','')
-            entry_parsed['cache_afterRequest_hitCount'] = entry.get('cache', {}).get('afterRequest', {}).get('hitCount',-1)
-
             entry_parsed['timings_blocked'] = entry.get('timings', {}).get('blocked', -1)
             entry_parsed['timings_dns'] = entry.get('timings', {}).get('dns', -1)
             entry_parsed['timings_connect'] = entry.get('timings', {}).get('connect', -1)
@@ -134,6 +125,30 @@ class FileImporter():
             entry_parsed['timings_wait'] = entry.get('timings', {}).get('wait', -1)
             entry_parsed['timings_receive'] = entry.get('timings', {}).get('receive', -1)
             entry_parsed['timings_ssl'] = entry.get('timings', {}).get('ssl', -1)
+
+            # not using cache information at the moment
+
+            #if entry.get('cache', {}).get('beforeRequest', {}) is not None:
+            #    entry_parsed['cache_beforeRequest_expires'] = entry.get('cache', {}).get('beforeRequest', {}).get('expires', '')
+            #    entry_parsed['cache_beforeRequest_lastAccess'] = entry.get('cache', {}).get('beforeRequest', {}).get('lastAccess', '')
+            #    entry_parsed['cache_beforeRequest_eTag'] = entry.get('cache', {}).get('beforeRequest', {}).get('eTag', '')
+            #    entry_parsed['cache_beforeRequest_hitCount'] = entry.get('cache', {}).get('beforeRequest', {}).get('hitCount', -1)
+            #else:
+            #    entry_parsed['cache_beforeRequest_expires'] = 'None'
+            #    entry_parsed['cache_beforeRequest_lastAccess'] = 'None'
+            #    entry_parsed['cache_beforeRequest_eTag'] = 'None'
+            #    entry_parsed['cache_beforeRequest_hitCount'] = 'None'
+
+            #if entry.get('cache', {}).get('afterRequest', {}) is not None:
+            #    entry_parsed['cache_afterRequest_expires'] = entry.get('cache', {}).get('afterRequest', {}).get('expires', '')
+            #    entry_parsed['cache_afterRequest_lastAccess'] = entry.get('cache', {}).get('afterRequest', {}).get('lastAccess', '')
+            #    entry_parsed['cache_afterRequest_eTag'] = entry.get('cache', {}).get('afterRequest', {}).get('eTag', '')
+            #    entry_parsed['cache_afterRequest_hitCount'] = entry.get('cache', {}).get('afterRequest', {}).get('hitCount', -1)
+            #else:
+            #    entry_parsed['cache_afterRequest_expires'] = 'None'
+            #    entry_parsed['cache_afterRequest_lastAccess'] = 'None'
+            #    entry_parsed['cache_afterRequest_eTag'] = 'None'
+            #    entry_parsed['cache_afterRequest_hitCount'] = 'None'
 
             ##################################
             # start of custom HAR parsing logic
@@ -145,9 +160,12 @@ class FileImporter():
             if entry_parsed['response_bodySize'] is None:
                 entry_parsed['response_bodySize'] = -1
 
-            # extract the request protocol
-            request_protocol = re.match(r'https?', entry_parsed['request_url'])
-            entry_parsed['request_protocol'] = request_protocol.group()
+            # extract the URI scheme
+            request_protocol = re.match(r'^[a-z]+(?=\:)', entry_parsed['request_url'])
+            if request_protocol.group():
+                entry_parsed['request_protocol'] = request_protocol.group()
+            else:
+                entry_parsed['Unknown']
 
             # extract cookie info from headers if cookies object is empty
             if not entry_parsed['request_cookies']:
@@ -308,9 +326,7 @@ class FileImporter():
                     try:
                         request_decoded = b64decode(param['value'])
                         request_decompressed = decompress(request_decoded, -15).decode('utf-8')
-                        request_decompressed = request_decompressed.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        request_formatted = etree.fromstring(request_decompressed)
-                        request_formatted = etree.tostring(request_formatted, pretty_print=True).decode()
+                        request_formatted = BeautifulSoup(request_decompressed, 'xml').prettify()
                         return request_formatted
                     except:
                         return 'Couldn\'t parse SAML request.'
@@ -322,9 +338,7 @@ class FileImporter():
                 response_encoded = response_encoded.replace('%2B', '+').replace('%3D', '=').replace('%0A', '').replace('%0D', '')
                 try:
                     response_decoded = b64decode(response_encoded).decode('utf-8')
-                    response_decoded = response_decoded.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                    response_formatted = etree.fromstring(response_decoded)
-                    response_formatted = etree.tostring(response_formatted, pretty_print=True).decode()
+                    response_formatted = BeautifulSoup(response_decoded, 'xml').prettify()
                     return response_formatted
                 except:
                     return 'Couldn\'t parse SAML response.'

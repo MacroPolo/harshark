@@ -38,6 +38,26 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.1.1 (16-Feb-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+N/A
+
+BUG FIXES:
+* Using a new XML parser so SAML pretty printing should now be more
+consistent.
+* Fixed bug where program would crash when a HAR file had URLs with a
+URI scheme other than HTTP/S. Now we support things like WS, WSS, FTP
+etc. Also Added a few new default colours for WS, WSS and FTP schemes.
+* Fixed a bug where null values in cache objects would cause the program
+to crash. 
+* Cache object parsing has now been disabled as it is not used at
+present.
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.1.0 (15-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:

@@ -16,8 +16,11 @@
             "trace": "#fccde5"
         },
         "protocol": {
+            "ftp": "#80b1d3",
             "http": "#fdb462",
-            "https": "#ffffff"
+            "https": "#ffffff",
+            "ws": "#fdb462",
+            "wss": "#ccebc5"
         },
         "search_match": "#ffff99",
         "status": {
@@ -101,7 +104,7 @@
             "category": "Response",
             "index": 17,
             "name": "Response Body Size (Uncompressed)",
-            "visible": true
+            "visible": false
         },
         "response-header-szie": {
             "category": "Response",
