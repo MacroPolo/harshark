@@ -5,7 +5,7 @@ import string
 import time
 
 from base64 import b64decode
-from lxml import etree
+from bs4 import BeautifulSoup
 from zlib import decompress
 
 from PyQt5.QtWidgets import QFileDialog
@@ -308,9 +308,7 @@ class FileImporter():
                     try:
                         request_decoded = b64decode(param['value'])
                         request_decompressed = decompress(request_decoded, -15).decode('utf-8')
-                        request_decompressed = request_decompressed.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                        request_formatted = etree.fromstring(request_decompressed)
-                        request_formatted = etree.tostring(request_formatted, pretty_print=True).decode()
+                        request_formatted = BeautifulSoup(request_decompressed, 'xml').prettify()
                         return request_formatted
                     except:
                         return 'Couldn\'t parse SAML request.'
@@ -322,9 +320,7 @@ class FileImporter():
                 response_encoded = response_encoded.replace('%2B', '+').replace('%3D', '=').replace('%0A', '').replace('%0D', '')
                 try:
                     response_decoded = b64decode(response_encoded).decode('utf-8')
-                    response_decoded = response_decoded.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-                    response_formatted = etree.fromstring(response_decoded)
-                    response_formatted = etree.tostring(response_formatted, pretty_print=True).decode()
+                    response_formatted = BeautifulSoup(response_decoded, 'xml').prettify()
                     return response_formatted
                 except:
                     return 'Couldn\'t parse SAML response.'
