@@ -9,18 +9,18 @@
             "delete": "#fb8072",
             "get": "#ffffff",
             "head": "#ccebc5",
-            "options": "#ccebc5",
+            "options": "#ffed6f",
             "patch": "#d9d9d9",
             "post": "#80b1d3",
             "put": "#fdb462",
             "trace": "#fccde5"
         },
         "protocol": {
-          "http": "#fdb462",
-          "https": "#ffffff",
-          "wss": "#ccebc5",
-          "ws": "#fdb462",
-          "ftp": "#80b1d3"
+            "ftp": "#80b1d3",
+            "http": "#fdb462",
+            "https": "#ffffff",
+            "ws": "#fdb462",
+            "wss": "#ccebc5"
         },
         "search_match": "#ffff99",
         "status": {
@@ -31,7 +31,7 @@
             "500": "#fb8072"
         }
     },
-    "experimental-saml": true,
+    "experimental-saml": false,
     "sort-headers": false,
     "table_columns": {
         "connection-id": {
@@ -104,7 +104,7 @@
             "category": "Response",
             "index": 17,
             "name": "Response Body Size (Uncompressed)",
-            "visible": true
+            "visible": false
         },
         "response-header-szie": {
             "category": "Response",
@@ -192,5 +192,5 @@
         }
     },
     "truncate-character-count": 5000,
-    "word-wrap": false
+    "word-wrap": true
 }

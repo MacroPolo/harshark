@@ -137,7 +137,7 @@ class ConfigMgr(object):
               "category": "Response",
               "index": 9,
               "name": "Status Text",
-              "visible": True
+              "visible": False
             },
             "time-blocked": {
               "category": "Timing",
