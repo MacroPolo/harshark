@@ -39,7 +39,6 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
 
 import configmgr
-import style
 from actions.aboutdialog import AboutDialog
 from actions.columnselectdialog import ColumnSelectDialog
 from actions.entryselector import EntrySelector
@@ -69,6 +68,14 @@ class MainApp(QMainWindow):
         self.buildUi()
 
     def buildUi(self):
+        # ---------------------------------------------------------
+        # STYLE
+        # ---------------------------------------------------------
+        stylesheet_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'style-light.qss')
+        
+        with open(stylesheet_path, 'r') as f:
+            self.setStyleSheet(f.read())
+
         # ---------------------------------------------------------
         # ICONS
         # ---------------------------------------------------------
@@ -460,11 +467,6 @@ class MainApp(QMainWindow):
         #splitter_v.setStretchFactor(1, 1)
 
         self.setCentralWidget(splitter_v)
-
-        # ---------------------------------------------------------
-        # STYLE
-        # ---------------------------------------------------------
-        style.setStyleSheet(self, 'light')
 
         # ---------------------------------------------------------
         # KICKUP
