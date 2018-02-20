@@ -19,6 +19,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QTextOption
+from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import qApp
@@ -68,6 +69,21 @@ class MainApp(QMainWindow):
         self.buildUi()
 
     def buildUi(self):
+        # ---------------------------------------------------------
+        # FONTS
+        # ---------------------------------------------------------
+        font_path = os.path.join(os.path.dirname(__file__), '..', 'fonts')
+
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'droid-sans-mono.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'fira-mono-regular.otf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'hack-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'inconsolata.otf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'pt-mono.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'space-mono-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'ubuntu-mono-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'anonymous.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(font_path, 'inter-ui-regular.ttf'))
+
         # ---------------------------------------------------------
         # STYLE
         # ---------------------------------------------------------

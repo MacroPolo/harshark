@@ -222,7 +222,7 @@ class FileImporter():
 
         for key, value in self.har_parsed.items():
             t.insertRow(r)
-            t.setRowHeight(r, 20)
+            t.setRowHeight(r, 22)
             t.setItem(r, 0, QTableWidgetItem(key))
             t.setItem(r, 1, QTableWidgetItem(str(value['startedDateTime'])))
             t.setItem(r, 2, QTableWidgetItem(str(value['serverIPAddress'])))

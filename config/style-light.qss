@@ -1,6 +1,11 @@
+QTabWidget, QGroupBox, QLineEdit, QPushButton {
+    font-family: "Inter UI";
+    font-size: 10pt;
+}
+
 QTableWidget {
-    font-family: "Consolas";
-    font-size: 1pt;
+    font-family: "Droid Sans Mono";
+    font-size: 10pt;
     gridline-color: #e4e4e4;
 }
 
@@ -14,12 +19,12 @@ QLineEdit {
 }
 
 QTextEdit {
-    font-family: "Consolas";
+    font-family: "Droid Sans Mono";
     font-size: 10pt;
 }
 
 QPlainTextEdit {
-    font-family: "Consolas";
+    font-family: "Droid Sans Mono";
     font-size: 10pt;
 }
 
