@@ -192,5 +192,5 @@
         }
     },
     "truncate-character-count": 5000,
-    "word-wrap": true
+    "word-wrap": false
 }

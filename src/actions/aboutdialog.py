@@ -126,6 +126,10 @@ N/A"""
         self.initWidget()
 
     def initWidget(self):
+
+        with open(self.app.stylesheet_path, 'r') as f:
+            self.setStyleSheet(f.read())
+
         button_ok = QPushButton('OK', self)
         button_ok.clicked.connect(self.okPressed)
 
@@ -160,12 +164,6 @@ N/A"""
         self.setWindowIcon(self.app.about_icon)
         self.setWindowModality(Qt.ApplicationModal)
         self.resize(700 , 400)
-        self.setStyleSheet("""
-            QPlainTextEdit {
-                    font-family: "Consolas";
-                    font-size: 10pt;
-                }
-        """)
         self.exec_()
 
     def okPressed(self):

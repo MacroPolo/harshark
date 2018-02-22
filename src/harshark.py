@@ -72,24 +72,24 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         # FONTS
         # ---------------------------------------------------------
-        font_path = os.path.join(os.path.dirname(__file__), '..', 'fonts')
+        self.font_path = os.path.join(os.path.dirname(__file__), '..', 'fonts')
 
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'droid-sans-mono.ttf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'fira-mono-regular.otf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'hack-regular.ttf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'inconsolata.otf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'pt-mono.ttf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'space-mono-regular.ttf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'ubuntu-mono-regular.ttf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'anonymous.ttf'))
-        QFontDatabase.addApplicationFont(os.path.join(font_path, 'inter-ui-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'droid-sans-mono.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'fira-mono-regular.otf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'hack-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'inconsolata.otf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'pt-mono.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'space-mono-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'ubuntu-mono-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'anonymous.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'inter-ui-regular.ttf'))
 
         # ---------------------------------------------------------
         # STYLE
         # ---------------------------------------------------------
-        stylesheet_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'style-light.qss')
+        self.stylesheet_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'style-light.qss')
         
-        with open(stylesheet_path, 'r') as f:
+        with open(self.stylesheet_path, 'r') as f:
             self.setStyleSheet(f.read())
 
         # ---------------------------------------------------------
