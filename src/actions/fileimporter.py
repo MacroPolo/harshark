@@ -178,7 +178,7 @@ class FileImporter():
             entry_parsed['saml_request'] = ''
             entry_parsed['saml_response'] = ''
 
-            if self.app.config.getConfig('experimental-saml'):
+            if self.app.config.getConfig('parse-saml'):
                 if entry_parsed['request_queryString']:
                     entry_parsed['saml_request'] = self._parseSaml(entry_parsed['request_queryString'], 'request')
                 if entry_parsed['request_postData_text']:
@@ -222,7 +222,7 @@ class FileImporter():
 
         for key, value in self.har_parsed.items():
             t.insertRow(r)
-            t.setRowHeight(r, 20)
+            t.setRowHeight(r, 22)
             t.setItem(r, 0, QTableWidgetItem(key))
             t.setItem(r, 1, QTableWidgetItem(str(value['startedDateTime'])))
             t.setItem(r, 2, QTableWidgetItem(str(value['serverIPAddress'])))

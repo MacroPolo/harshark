@@ -38,6 +38,20 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.2.0 (24-Feb-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+* Various styling updates including a new default UI font and colours.
+* SAML parsing is now enabled by default and is no longer classed as
+experimental.
+
+BUG FIXES:
+N/A
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.1.1 (16-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
@@ -126,6 +140,10 @@ N/A"""
         self.initWidget()
 
     def initWidget(self):
+
+        with open(self.app.stylesheet_path, 'r') as f:
+            self.setStyleSheet(f.read())
+
         button_ok = QPushButton('OK', self)
         button_ok.clicked.connect(self.okPressed)
 
@@ -160,12 +178,6 @@ N/A"""
         self.setWindowIcon(self.app.about_icon)
         self.setWindowModality(Qt.ApplicationModal)
         self.resize(700 , 400)
-        self.setStyleSheet("""
-            QPlainTextEdit {
-                    font-family: "Consolas";
-                    font-size: 10pt;
-                }
-        """)
         self.exec_()
 
     def okPressed(self):

@@ -31,7 +31,7 @@
             "500": "#fb8072"
         }
     },
-    "experimental-saml": false,
+    "parse-saml": true,
     "sort-headers": false,
     "table_columns": {
         "connection-id": {

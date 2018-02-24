@@ -1,0 +1,37 @@
+/* Light Stylesheet */
+
+QTabWidget, QGroupBox, QLineEdit, QPushButton {
+    font-family: "Inter UI";
+    font-size: 10pt;
+}
+
+QTextEdit, QPlainTextEdit, QTableWidget {
+    font-family: "Droid Sans Mono";
+    font-size: 10pt;
+}
+
+QTableWidget {
+    gridline-color: #e4e4e4;
+}
+
+QLineEdit {
+    border: 1px solid #c1c1c1;
+    border-radius: 2px;
+    padding-left: 5px;
+    margin: 2px 0px 2px 0px;
+}
+
+QGroupBox {
+    font-weight: bold;
+}
+
+QTabBar::tab:enabled {
+    border: 1px solid #b1b1b1;
+    border-bottom: 0px;
+    background-color: #dcdcdc;
+}
+
+QTabBar::tab:selected {
+    background-color: #4d9de0;
+	color: white;
+}
