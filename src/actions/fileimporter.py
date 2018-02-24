@@ -178,7 +178,7 @@ class FileImporter():
             entry_parsed['saml_request'] = ''
             entry_parsed['saml_response'] = ''
 
-            if self.app.config.getConfig('experimental-saml'):
+            if self.app.config.getConfig('parse-saml'):
                 if entry_parsed['request_queryString']:
                     entry_parsed['saml_request'] = self._parseSaml(entry_parsed['request_queryString'], 'request')
                 if entry_parsed['request_postData_text']:

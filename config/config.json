@@ -31,7 +31,7 @@
             "500": "#fb8072"
         }
     },
-    "experimental-saml": true,
+    "parse-saml": true,
     "sort-headers": false,
     "table_columns": {
         "connection-id": {
@@ -192,5 +192,5 @@
         }
     },
     "truncate-character-count": 5000,
-    "word-wrap": false
+    "word-wrap": true
 }

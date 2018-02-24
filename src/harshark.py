@@ -59,7 +59,7 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.version = '2.1.1'
+        self.version = '2.2.0'
         self.config = configmgr.ConfigMgr()
         self.har_summary = None
         self.har_parsed = None
@@ -97,7 +97,7 @@ class MainApp(QMainWindow):
         # ---------------------------------------------------------
         icon_path = os.path.join(os.path.dirname(__file__), '..', 'icons')
 
-        app_icon = QIcon(os.path.join(icon_path, 'crosshairs.svg'))
+        app_icon = QIcon(os.path.join(icon_path, 'harshark.svg'))
         open_icon = QIcon(os.path.join(icon_path, 'folder-open.svg'))
         quit_icon = QIcon(os.path.join(icon_path, 'power-off.svg'))
         case_icon = QIcon(os.path.join(icon_path, 'font.svg'))
@@ -107,7 +107,7 @@ class MainApp(QMainWindow):
         wrap_icon = QIcon(os.path.join(icon_path, 'file-alt.svg'))
         sort_icon = QIcon(os.path.join(icon_path, 'sort-alpha-down.svg'))
         colour_icon = QIcon(os.path.join(icon_path, 'paint-brush.svg'))
-        saml_icon = QIcon(os.path.join(icon_path, 'exclamation-triangle.svg'))
+        saml_icon = QIcon(os.path.join(icon_path, 'address-card.svg'))
         self.about_icon = QIcon(os.path.join(icon_path, 'question-circle.svg'))
         self.column_select_icon = QIcon(os.path.join(icon_path, 'columns.svg'))
 
@@ -190,11 +190,10 @@ class MainApp(QMainWindow):
         menubar_options.addAction(action_columns)
 
         # SAML request and response parsing :: EXPERIMENTAL
-        self.action_enable_saml = QAction('SAML Parsing (Experimental)', self, icon=saml_icon,
-                                     checkable=True, statusTip=('Enable experimental SAML request '
-                                                              'and response parsing. May cause '
-                                                              'application crashes.'))
-        if self.config.getConfig('experimental-saml'):
+        self.action_enable_saml = QAction('SAML Parsing', self, icon=saml_icon,
+                                     checkable=True, statusTip=('Enable SAML request and response parsing. '))
+        
+        if self.config.getConfig('parse-saml'):
             self.action_enable_saml.setChecked(True)
 
         self.action_enable_saml.triggered.connect(self.toggleSaml)
@@ -535,11 +534,10 @@ class MainApp(QMainWindow):
             colourizeCells(self)
 
     def toggleSaml(self):
-        current = self.config.getConfig('experimental-saml')
-        self.config.setConfig('experimental-saml', not current)
+        current = self.config.getConfig('parse-saml')
+        self.config.setConfig('parse-saml', not current)
         if not current:
-            self.statusbar.showMessage('Experimental SAML parsing has been enabled. '
-                                        'Please re-open the HAR file.')
+            self.statusbar.showMessage('SAML parsing has been enabled. Please re-open the HAR file.')
 
     def globalSearch(self):
         search_results = GlobalSearch(self).found_rows
