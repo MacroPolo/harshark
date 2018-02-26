@@ -1,9 +1,9 @@
 # Harshark
 
-Harshark is a simple, offline HTTP Archive (HAR) parser built with Python 3 which will allow you to quickly analyse HAR captures as part of your troubleshooting toolkit.
-It is compatible with version 1.1 or 1.2 HAR files and should be able to open
-captures taken directly from Chrome, Firefox and newer versions of IE which now
-correctly saves network captures as JSON rather than XML.
+Harshark is a simple, offline HTTP Archive (HAR) parser built with Python 3 which will allow you to 
+quickly analyse HAR captures as part of your troubleshooting toolkit. It is compatible with version 
+1.1 or 1.2 HAR files and should be able to open captures taken directly from Chrome, Firefox and 
+newer versions of Internet Explorer which now correctly saves network captures as JSON rather than XML.
 
 ## Installation
 
@@ -33,7 +33,7 @@ $ python3 src/harshark.py
 | File > Cell Colourization  | Toggle cell colourizations.  |
 | File > Resize Columns  | Resize columns to fit.  |
 | Options > Choose Columns  | Select which columns to display in the entries table.  |
-| Options > SAML Parsing (Experimental) | Enable experimental parsing of SAML Request and Response content.  |
+| Options > SAML Parsing  | Enable or disable the parsing of SAML Request and Response content.  |
 | Help > About | Software information.  |
 
 ### Toolbar
@@ -79,8 +79,14 @@ The entries table shows information about each request found in the HAR file. Co
 
 ### Searching
 
-Using the search bar above the entries table will perform a global search across all entries and highlight any rows which contain at least one match. Searches performed within the global search bar can optionally be made case-sensitive by clicking the toggle button to the left of the search bar.
+Using the search bar above the entries table will perform a global search across all entries and 
+highlight any rows which contain at least one match. Searches performed within the global search 
+bar can optionally be made case-sensitive by clicking the toggle button to the left of the search 
+bar.
 
-There is also search functionality built into the request and response panels which allow you to perform a more focused search on the current aspect of the entry that you are interested in. For example, you can perform a search from within the Response Body tab which will highlight any matches and allow you to navigate between them.
+There is also search functionality built into the request and response panels which allow you to 
+perform a more focused search on the current aspect of the entry that you are interested in. For 
+example, you can perform a search from within the Response Body tab which will highlight any 
+matches and allow you to navigate between them.
 
 For best performance, try to avoid very short search queries.
