@@ -38,6 +38,21 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.2.1 (28-Feb-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+N/A
+
+BUG FIXES:
+Fixed bug where SAML requests wouldn't be parsed because there was 
+URI (precent) encoded characters in the Base64. Now we replace any
+Base64 special character which has been URI encoded in both SAML
+request and response ('/', '+', '=' and newline)
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.2.0 (24-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:

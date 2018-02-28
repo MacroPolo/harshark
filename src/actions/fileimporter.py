@@ -324,7 +324,12 @@ class FileImporter():
             for param in saml:
                 if param['name'].lower() == 'samlrequest':
                     try:
-                        request_decoded = b64decode(param['value'])
+                        request_encoded = param['value'].replace('%2B', '+') \
+                                                        .replace('%2F', '/') \
+                                                        .replace('%3D', '=') \
+                                                        .replace('%0A', '') \
+                                                        .replace('%0D', '')
+                        request_decoded = b64decode(request_encoded)
                         request_decompressed = decompress(request_decoded, -15).decode('utf-8')
                         request_formatted = BeautifulSoup(request_decompressed, 'xml').prettify()
                         return request_formatted
@@ -335,7 +340,11 @@ class FileImporter():
             saml_response = re.search(r'(?<=SAMLResponse\=)[A-Za-z0-9\%\+\=\/]+', saml)
             if saml_response:
                 response_encoded = saml_response.group()
-                response_encoded = response_encoded.replace('%2B', '+').replace('%3D', '=').replace('%0A', '').replace('%0D', '')
+                response_encoded = response_encoded.replace('%2B', '+') \
+                                                   .replace('%2F', '/') \
+                                                   .replace('%3D', '=') \
+                                                   .replace('%0A', '') \
+                                                   .replace('%0D', '')
                 try:
                     response_decoded = b64decode(response_encoded).decode('utf-8')
                     response_formatted = BeautifulSoup(response_decoded, 'xml').prettify()
