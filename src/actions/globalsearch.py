@@ -38,14 +38,15 @@ class GlobalSearch():
     def _searchEntries(self):
         for k, v in self.app.har_parsed.items():
             found_item = None
+            master_search = list(self.flattenDict(v))
             if self.app.config.getConfig('case-sensitive-matching'):
-                if self.search_string_a in str(v):
+                if self.search_string_a in str(master_search):
                     # look for entry ID in table and return QTableWidgetItem
                     found_item = self.app.entries_table.findItems(k, Qt.MatchFlags(Qt.MatchFixedString |
                                                                                    Qt.MatchCaseSensitive |
                                                                                    Qt.MatchWrap))[0]
             else:
-                if self.search_string_b in str(v).casefold():
+                if self.search_string_b in str(master_search).casefold():
                     # look for entry ID in table and return QTableWidgetItem
                     found_item = self.app.entries_table.findItems(k, Qt.MatchFlags(Qt.MatchFixedString |
                                                                                    Qt.MatchCaseSensitive |
@@ -70,3 +71,16 @@ class GlobalSearch():
                 if cell_colour == colour_none or cell_colour == colour_default:
                     self.app.entries_table.item(row, column).setBackground(colour_match)
 
+    def flattenDict(self, d):
+          for v in d.values():
+            if v:
+                if isinstance(v, list):
+                    for i in v:
+                        if isinstance(i, dict):
+                            yield from self.flattenDict(i)
+                        else:
+                            if i: yield i
+                elif isinstance(v, dict):
+                    yield from self.flattenDict(v)
+                else:
+                    yield v
