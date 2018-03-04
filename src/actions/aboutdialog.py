@@ -166,7 +166,7 @@ N/A"""
         info_tab = QWidget()
         license_tab = QWidget()
 
-        about_tabs.addTab(info_tab, 'Information')
+        about_tabs.addTab(info_tab, 'Release Notes')
         about_tabs.addTab(license_tab, 'License')
 
         info_tab_layout = QVBoxLayout()

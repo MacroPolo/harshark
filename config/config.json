@@ -9,9 +9,9 @@
             "delete": "#fb8072",
             "get": "#ffffff",
             "head": "#ccebc5",
-            "options": "#ffed6f",
+            "options": "#80b1d3",
             "patch": "#d9d9d9",
-            "post": "#80b1d3",
+            "post": "#ffed6f",
             "put": "#fdb462",
             "trace": "#fccde5"
         },
@@ -192,5 +192,5 @@
         }
     },
     "truncate-character-count": 5000,
-    "word-wrap": true
+    "word-wrap": false
 }
