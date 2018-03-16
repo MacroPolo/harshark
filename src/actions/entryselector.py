@@ -77,16 +77,27 @@ class EntrySelector():
         self.app.request_cookie_tab_text.moveCursor(QTextCursor.Start)
 
     def _populateRequestBody(self):
-        post_data = self.entry_data['request_postData_text']
-        # truncate large post bodies by default
-        truncate_length = self.app.config.getConfig('truncate-character-count')
-        if len(post_data) > truncate_length:
-            self.app.request_expand_button.show()
-            self.app.request_body_tab_text.appendPlainText(post_data[:truncate_length])
-            self.app.request_body_tab_text.appendPlainText('. . .')
-        else:
+        post_text = self.entry_data['request_postData_text']
+        post_params = self.entry_data['request_postData_params']
+
+        if post_text:
+            # truncate large post bodies by default
+            truncate_length = self.app.config.getConfig('truncate-character-count')
+            if len(post_text) > truncate_length:
+                self.app.request_expand_button.show()
+                self.app.request_body_tab_text.appendPlainText(post_text[:truncate_length])
+                self.app.request_body_tab_text.appendPlainText('. . .')
+            else:
+                self.app.request_expand_button.hide()
+                self.app.request_body_tab_text.appendPlainText(post_text)
+
+        elif post_params:
+            for param in post_params:
+                for k, v in param.items():
+                    entry = '{}: {}'.format(k, v)
+                    self.app.request_body_tab_text.appendPlainText(entry)
+                self.app.request_body_tab_text.appendPlainText('')
             self.app.request_expand_button.hide()
-            self.app.request_body_tab_text.appendPlainText(post_data)
 
         self.app.request_body_tab_text.moveCursor(QTextCursor.Start)
         self._toggleTabVisibility(self.app.request_tabs, self.app.request_body_tab_text, 3)
