@@ -323,7 +323,8 @@ class FileImporter():
 
         if saml_type == 'request':
             for param in saml:
-                if param['name'].lower() == 'samlrequest':
+                # query strings with no names may be recorded as null in HAR (looking at you Fiddler)
+                if param['name'] is not None and param['name'].lower() == 'samlrequest':
                     try:
                         request_encoded = param['value'].replace('%2B', '+') \
                                                         .replace('%2F', '/') \
