@@ -109,7 +109,6 @@ class FileImporter():
             entry_parsed['response_cookies'] = entry.get('response', {}).get('cookies', [])
             entry_parsed['response_headers'] = entry.get('response', {}).get('headers', [])
             entry_parsed['response_content'] = entry.get('response', {}).get('content', [])
-            entry_parsed['response_content'] = {}
             entry_parsed['response_content_size'] = entry_parsed['response_content'].get('size', -1)
             entry_parsed['response_content_compression'] = entry_parsed['response_content'].get('compression', -1)
             entry_parsed['response_content_mimeType'] = entry_parsed['response_content'].get('mimeType', '')
