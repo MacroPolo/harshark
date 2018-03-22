@@ -38,6 +38,23 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.2.2 (22-Mar-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+N/A
+
+BUG FIXES:
+* Fixed [Issue-5](https://github.com/MacroPolo/harshark/issues/5) so
+that global search is no longer also searching in dict keys. Search corpus 
+is now values only.
+* Handle POST data found in parameter field rather than just looking for
+raw text.
+* Default styling changes.
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.2.1 (28-Feb-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
