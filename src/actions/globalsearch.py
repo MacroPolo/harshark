@@ -21,8 +21,8 @@ class GlobalSearch():
         else:
             self.app.statusbar.showMessage('Searching...')
             search_start = time.time()
-            self._searchEntries()
-            self._highlightEntries()
+            self.searchEntries()
+            self.highlightEntries()
             match_count = len(self.found_rows)
             search_stop = time.time()
             elapsed_time = search_stop - search_start
@@ -35,17 +35,19 @@ class GlobalSearch():
         
         self.app.statusbar.showMessage('Search Result: Found {} matching entries in {:.1f} seconds.'.format(match_count, elapsed_time))
 
-    def _searchEntries(self):
+    def searchEntries(self):
         for k, v in self.app.har_parsed.items():
             found_item = None
+            # list of all values extracted from the entry dictionary
+            master_search = list(self.valuesFromDict(v))
             if self.app.config.getConfig('case-sensitive-matching'):
-                if self.search_string_a in str(v):
+                if self.search_string_a in str(master_search):
                     # look for entry ID in table and return QTableWidgetItem
                     found_item = self.app.entries_table.findItems(k, Qt.MatchFlags(Qt.MatchFixedString |
                                                                                    Qt.MatchCaseSensitive |
                                                                                    Qt.MatchWrap))[0]
             else:
-                if self.search_string_b in str(v).casefold():
+                if self.search_string_b in str(master_search).casefold():
                     # look for entry ID in table and return QTableWidgetItem
                     found_item = self.app.entries_table.findItems(k, Qt.MatchFlags(Qt.MatchFixedString |
                                                                                    Qt.MatchCaseSensitive |
@@ -54,7 +56,7 @@ class GlobalSearch():
                 found_item_row = self.app.entries_table.row(found_item)
                 self.found_rows.append(found_item_row)
 
-    def _highlightEntries(self):
+    def highlightEntries(self):
         # TODO Figure out what is going on with this. The default QColor for cell is black 
         # but with a value of 0?
         colour_none = QColor(0, 0, 0).rgb()
@@ -70,3 +72,17 @@ class GlobalSearch():
                 if cell_colour == colour_none or cell_colour == colour_default:
                     self.app.entries_table.item(row, column).setBackground(colour_match)
 
+    @staticmethod
+    def valuesFromDict(d):
+          for v in d.values():
+            if v:
+                if isinstance(v, list):
+                    for i in v:
+                        if isinstance(i, dict):
+                            yield from GlobalSearch.valuesFromDict(i)
+                        else:
+                            if i: yield i
+                elif isinstance(v, dict):
+                    yield from GlobalSearch.valuesFromDict(v)
+                else:
+                    yield v

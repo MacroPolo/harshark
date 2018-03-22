@@ -1,6 +1,6 @@
 /* Light Stylesheet */
 
-QTabWidget, QGroupBox, QLineEdit, QPushButton {
+QTabWidget, QGroupBox, QLineEdit, QPushButton, QTreeWidget {
     font-family: "Inter UI";
     font-size: 10pt;
 }
@@ -26,12 +26,16 @@ QGroupBox {
 }
 
 QTabBar::tab:enabled {
-    border: 1px solid #b1b1b1;
-    border-bottom: 0px;
     background-color: #dcdcdc;
+	border: 1px solid #bcbaba;
+	border-bottom: 0px;
+	padding: 2px 12px 2px 12px;
 }
 
 QTabBar::tab:selected {
-    background-color: #4d9de0;
+    background-color: #4075a0;
+	border: 1px solid #bcbaba;
+    border-bottom: 0px;
 	color: white;
+	padding: 2px 12px 2px 12px;
 }
