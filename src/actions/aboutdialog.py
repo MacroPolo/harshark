@@ -49,6 +49,7 @@ that global search is no longer also searching in dict keys. Search corpus
 is now values only.
 * Handle POST data found in parameter field rather than just looking for
 raw text.
+* Handle keyless query strings which are recorded as null is HAR files.
 * Default styling changes.
 
 NOTES:
