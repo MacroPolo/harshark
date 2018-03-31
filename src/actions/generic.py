@@ -7,11 +7,20 @@ from PyQt5.QtGui import QTextCursor
 
 def resizeColumns(app):
     app.entries_table.resizeColumnsToContents()
-    app.entries_table.setColumnWidth(6, 800)    # request URL
-    app.entries_table.setColumnWidth(12, 800)   # redirect URL
+    # TODO fragile, column indexes may change
+    _resizeColumnIfLong(app.entries_table, 8, 800)      # URL path
+    _resizeColumnIfLong(app.entries_table, 9, 800)      # request URL
+    _resizeColumnIfLong(app.entries_table, 15, 800)     # redirect URL
+
+def _resizeColumnIfLong(table, column_index, new_width):
+    if table.columnWidth(column_index) > new_width:
+        print('Resizing')
+        table.setColumnWidth(column_index, new_width)
+    else:
+        print('Not Resizing')
 
 def _statusCodeFloor(status_code):
-    # 403 = 400
+    # e.g. 403 = 400
     return str(math.floor(int(status_code) / 100) * 100)
 
 def decolourizeCells(app):
@@ -21,9 +30,10 @@ def decolourizeCells(app):
     colour_default = QColor(colour_default_hex)
 
     for row in range(row_count):
-        app.entries_table.item(row, 4).setBackground(QColor(colour_default)) # method
-        app.entries_table.item(row, 5).setBackground(QColor(colour_default)) # protocol
-        app.entries_table.item(row, 8).setBackground(QColor(colour_default)) # status code
+        # TODO fragile, column indexes may change
+        app.entries_table.item(row, 4).setBackground(QColor(colour_default))    # method
+        app.entries_table.item(row, 5).setBackground(QColor(colour_default))    # protocol
+        app.entries_table.item(row, 11).setBackground(QColor(colour_default))   # status code
 
 def colourizeCells(app):
     row_count = app.entries_table.rowCount()
@@ -33,9 +43,10 @@ def colourizeCells(app):
 
     for row in range(row_count):
 
+        # TODO fragile, column indexes may change
         method_item = app.entries_table.item(row, 4)
         protocol_item = app.entries_table.item(row, 5)
-        status_code_item = app.entries_table.item(row, 8)
+        status_code_item = app.entries_table.item(row, 11)
 
         # request methods
         for method, colour in method_colours.items():

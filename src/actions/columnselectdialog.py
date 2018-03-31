@@ -39,8 +39,8 @@ class ColumnSelectDialog(QDialog):
         main_layout.addWidget(self.button_cancel)
 
         self.setLayout(main_layout)
-        self.resize(320, 720)
-        self.setMaximumWidth(320)
+        self.resize(360, 720)
+        self.setMaximumWidth(360)
         self.setMaximumHeight(720)
         self.setWindowTitle("Choose Columns to Display")
         self.setWindowModality(Qt.ApplicationModal)

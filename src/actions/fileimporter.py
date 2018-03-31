@@ -6,6 +6,7 @@ import time
 
 from base64 import b64decode
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 from zlib import decompress
 
 from PyQt5.QtWidgets import QFileDialog
@@ -154,18 +155,28 @@ class FileImporter():
             # start of custom HAR parsing logic
             ##################################
 
-            # HAR file may contain invalid field types
+            # HAR file may contain unexpected field types
             if entry_parsed['time'] is None:
                 entry_parsed['time'] = 0
             if entry_parsed['response_bodySize'] is None:
                 entry_parsed['response_bodySize'] = -1
 
-            # extract the URI scheme
-            request_protocol = re.match(r'^[a-z]+(?=\:)', entry_parsed['request_url'])
-            if request_protocol.group():
-                entry_parsed['request_protocol'] = request_protocol.group()
+            # slice up the URL into its components
+            url = urlparse(entry_parsed['request_url'], scheme='Unknown', allow_fragments=False)
+            
+            entry_parsed['request_protocol'] = url.scheme
+            entry_parsed['request_hostname'] = url.hostname
+            entry_parsed['request_path'] = url.path
+            
+            if url.port:
+                entry_parsed['request_port'] = url.port
+            elif url.scheme == 'https':
+                entry_parsed['request_port'] = '443'
+            elif url.scheme == 'http':
+                entry_parsed['request_port'] = '80'
+            # TODO use default ports for protocols other than http/s
             else:
-                entry_parsed['Unknown']
+                entry_parsed['request_port'] = ''
 
             # extract cookie info from headers if cookies object is empty
             if not entry_parsed['request_cookies']:
@@ -174,7 +185,6 @@ class FileImporter():
                 entry_parsed['response_cookies'] = self._parseCookies(entry_parsed['response_headers'])
 
             # SAML requests and responses
-
             entry_parsed['saml_request'] = ''
             entry_parsed['saml_response'] = ''
 
@@ -229,26 +239,29 @@ class FileImporter():
             t.setItem(r, 3, QTableWidgetItem(str(value['connection'])))
             t.setItem(r, 4, QTableWidgetItem(str(value['request_method']).upper()))
             t.setItem(r, 5, QTableWidgetItem(str(value['request_protocol']).upper()))
-            t.setItem(r, 6, QTableWidgetItem(str(value['request_url'])))
-            t.setItem(r, 7, QTableWidgetItem(str(value['request_httpVersion']).upper()))
-            t.setItem(r, 8, QTableWidgetItem(str(value['response_status'])))
-            t.setItem(r, 9, QTableWidgetItem(str(value['response_statusText'])))
-            t.setItem(r, 10, QTableWidgetItem(str(value['response_content_mimeType']).lower()))
-            t.setItem(r, 11, QTableWidgetItem(str(value['response_httpVersion']).upper()))
-            t.setItem(r, 12, QTableWidgetItem(str(value['response_redirectURL'])))
-            t.setItem(r, 13, HTableWidgetItem(str(int(value['request_headersSize'])), value['request_headersSize']))
-            t.setItem(r, 14, HTableWidgetItem(str(int(value['request_bodySize'])), value['request_bodySize']))
-            t.setItem(r, 15, HTableWidgetItem(str(int(value['response_headersSize'])), value['response_headersSize']))
-            t.setItem(r, 16, HTableWidgetItem(str(int(value['response_bodySize'])), value['response_bodySize']))
-            t.setItem(r, 17, HTableWidgetItem(str(int(value['response_content_size'])), value['response_content_size']))
-            t.setItem(r, 18, HTableWidgetItem(str(int(value['time'])), value['time']))
-            t.setItem(r, 19, HTableWidgetItem(str(int(value['timings_blocked'])), value['timings_blocked']))
-            t.setItem(r, 20, HTableWidgetItem(str(int(value['timings_dns'])), value['timings_dns']))
-            t.setItem(r, 21, HTableWidgetItem(str(int(value['timings_connect'])), value['timings_connect']))
-            t.setItem(r, 22, HTableWidgetItem(str(int(value['timings_send'])), value['timings_send']))
-            t.setItem(r, 23, HTableWidgetItem(str(int(value['timings_wait'])), value['timings_wait']))
-            t.setItem(r, 24, HTableWidgetItem(str(int(value['timings_receive'])), value['timings_receive']))
-            t.setItem(r, 25, HTableWidgetItem(str(int(value['timings_ssl'])), value['timings_ssl']))
+            t.setItem(r, 6, QTableWidgetItem(str(value['request_hostname'])))
+            t.setItem(r, 7, QTableWidgetItem(str(value['request_port'])))
+            t.setItem(r, 8, QTableWidgetItem(str(value['request_path'])))
+            t.setItem(r, 9, QTableWidgetItem(str(value['request_url'])))
+            t.setItem(r, 10, QTableWidgetItem(str(value['request_httpVersion']).upper()))
+            t.setItem(r, 11, QTableWidgetItem(str(value['response_status'])))
+            t.setItem(r, 12, QTableWidgetItem(str(value['response_statusText'])))
+            t.setItem(r, 13, QTableWidgetItem(str(value['response_content_mimeType']).lower()))
+            t.setItem(r, 14, QTableWidgetItem(str(value['response_httpVersion']).upper()))
+            t.setItem(r, 15, QTableWidgetItem(str(value['response_redirectURL'])))
+            t.setItem(r, 16, HTableWidgetItem(str(int(value['request_headersSize'])), value['request_headersSize']))
+            t.setItem(r, 17, HTableWidgetItem(str(int(value['request_bodySize'])), value['request_bodySize']))
+            t.setItem(r, 18, HTableWidgetItem(str(int(value['response_headersSize'])), value['response_headersSize']))
+            t.setItem(r, 19, HTableWidgetItem(str(int(value['response_bodySize'])), value['response_bodySize']))
+            t.setItem(r, 20, HTableWidgetItem(str(int(value['response_content_size'])), value['response_content_size']))
+            t.setItem(r, 21, HTableWidgetItem(str(int(value['time'])), value['time']))
+            t.setItem(r, 22, HTableWidgetItem(str(int(value['timings_blocked'])), value['timings_blocked']))
+            t.setItem(r, 23, HTableWidgetItem(str(int(value['timings_dns'])), value['timings_dns']))
+            t.setItem(r, 24, HTableWidgetItem(str(int(value['timings_connect'])), value['timings_connect']))
+            t.setItem(r, 25, HTableWidgetItem(str(int(value['timings_send'])), value['timings_send']))
+            t.setItem(r, 26, HTableWidgetItem(str(int(value['timings_wait'])), value['timings_wait']))
+            t.setItem(r, 27, HTableWidgetItem(str(int(value['timings_receive'])), value['timings_receive']))
+            t.setItem(r, 28, HTableWidgetItem(str(int(value['timings_ssl'])), value['timings_ssl']))
             r += 1
 
     def _finalise(self):

@@ -38,6 +38,19 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.3.0 (31-Mar-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+* Hostname, Port and Path are now being extracted from the request URL
+and can be now be displayed in their own columns.
+
+BUG FIXES:
+N/A
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.2.2 (22-Mar-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
