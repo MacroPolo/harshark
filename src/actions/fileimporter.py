@@ -5,6 +5,8 @@ import string
 import time
 
 from base64 import b64decode
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 from zlib import decompress
 
 from PyQt5.QtWidgets import QFileDialog
@@ -117,15 +119,6 @@ class FileImporter():
             entry_parsed['response_headersSize'] = entry.get('response', {}).get('headersSize', -1)
             entry_parsed['response_bodySize'] = entry.get('response', {}).get('bodySize', -1)
 
-            entry_parsed['cache_beforeRequest_expires'] = entry.get('cache', {}).get('beforeRequest', {}).get('expires','')
-            entry_parsed['cache_beforeRequest_lastAccess'] = entry.get('cache', {}).get('beforeRequest', {}).get('lastAccess','')
-            entry_parsed['cache_beforeRequest_eTag'] = entry.get('cache', {}).get('beforeRequest', {}).get('eTag','')
-            entry_parsed['cache_beforeRequest_hitCount'] = entry.get('cache', {}).get('beforeRequest', {}).get('hitCount',-1)
-            entry_parsed['cache_afterRequest_expires'] = entry.get('cache', {}).get('afterRequest', {}).get('expires','')
-            entry_parsed['cache_afterRequest_lastAccess'] = entry.get('cache', {}).get('afterRequest', {}).get('lastAccess','')
-            entry_parsed['cache_afterRequest_eTag'] = entry.get('cache', {}).get('afterRequest', {}).get('eTag','')
-            entry_parsed['cache_afterRequest_hitCount'] = entry.get('cache', {}).get('afterRequest', {}).get('hitCount',-1)
-
             entry_parsed['timings_blocked'] = entry.get('timings', {}).get('blocked', -1)
             entry_parsed['timings_dns'] = entry.get('timings', {}).get('dns', -1)
             entry_parsed['timings_connect'] = entry.get('timings', {}).get('connect', -1)
@@ -134,19 +127,56 @@ class FileImporter():
             entry_parsed['timings_receive'] = entry.get('timings', {}).get('receive', -1)
             entry_parsed['timings_ssl'] = entry.get('timings', {}).get('ssl', -1)
 
+            # not using cache information at the moment
+
+            #if entry.get('cache', {}).get('beforeRequest', {}) is not None:
+            #    entry_parsed['cache_beforeRequest_expires'] = entry.get('cache', {}).get('beforeRequest', {}).get('expires', '')
+            #    entry_parsed['cache_beforeRequest_lastAccess'] = entry.get('cache', {}).get('beforeRequest', {}).get('lastAccess', '')
+            #    entry_parsed['cache_beforeRequest_eTag'] = entry.get('cache', {}).get('beforeRequest', {}).get('eTag', '')
+            #    entry_parsed['cache_beforeRequest_hitCount'] = entry.get('cache', {}).get('beforeRequest', {}).get('hitCount', -1)
+            #else:
+            #    entry_parsed['cache_beforeRequest_expires'] = 'None'
+            #    entry_parsed['cache_beforeRequest_lastAccess'] = 'None'
+            #    entry_parsed['cache_beforeRequest_eTag'] = 'None'
+            #    entry_parsed['cache_beforeRequest_hitCount'] = 'None'
+
+            #if entry.get('cache', {}).get('afterRequest', {}) is not None:
+            #    entry_parsed['cache_afterRequest_expires'] = entry.get('cache', {}).get('afterRequest', {}).get('expires', '')
+            #    entry_parsed['cache_afterRequest_lastAccess'] = entry.get('cache', {}).get('afterRequest', {}).get('lastAccess', '')
+            #    entry_parsed['cache_afterRequest_eTag'] = entry.get('cache', {}).get('afterRequest', {}).get('eTag', '')
+            #    entry_parsed['cache_afterRequest_hitCount'] = entry.get('cache', {}).get('afterRequest', {}).get('hitCount', -1)
+            #else:
+            #    entry_parsed['cache_afterRequest_expires'] = 'None'
+            #    entry_parsed['cache_afterRequest_lastAccess'] = 'None'
+            #    entry_parsed['cache_afterRequest_eTag'] = 'None'
+            #    entry_parsed['cache_afterRequest_hitCount'] = 'None'
+
             ##################################
             # start of custom HAR parsing logic
             ##################################
 
-            # HAR file may contain invalid field types
+            # HAR file may contain unexpected field types
             if entry_parsed['time'] is None:
                 entry_parsed['time'] = 0
             if entry_parsed['response_bodySize'] is None:
                 entry_parsed['response_bodySize'] = -1
 
-            # extract the request protocol
-            request_protocol = re.match(r'https?', entry_parsed['request_url'])
-            entry_parsed['request_protocol'] = request_protocol.group()
+            # slice up the URL into its components
+            url = urlparse(entry_parsed['request_url'], scheme='Unknown', allow_fragments=False)
+            
+            entry_parsed['request_protocol'] = url.scheme
+            entry_parsed['request_hostname'] = url.hostname
+            entry_parsed['request_path'] = url.path
+            
+            if url.port:
+                entry_parsed['request_port'] = url.port
+            elif url.scheme == 'https':
+                entry_parsed['request_port'] = '443'
+            elif url.scheme == 'http':
+                entry_parsed['request_port'] = '80'
+            # TODO use default ports for protocols other than http/s
+            else:
+                entry_parsed['request_port'] = ''
 
             # extract cookie info from headers if cookies object is empty
             if not entry_parsed['request_cookies']:
@@ -155,15 +185,14 @@ class FileImporter():
                 entry_parsed['response_cookies'] = self._parseCookies(entry_parsed['response_headers'])
 
             # SAML requests and responses
+            entry_parsed['saml_request'] = ''
+            entry_parsed['saml_response'] = ''
 
-            entry_parsed['request_saml'] = ''
-            entry_parsed['response_saml'] = ''
-
-            if self.app.config.getConfig('experimental-saml'):
+            if self.app.config.getConfig('parse-saml'):
                 if entry_parsed['request_queryString']:
-                    entry_parsed['request_saml'] = self._parseSaml(entry_parsed['request_queryString'], 'request')
+                    entry_parsed['saml_request'] = self._parseSaml(entry_parsed['request_queryString'], 'request')
                 if entry_parsed['request_postData_text']:
-                    entry_parsed['response_saml'] = self._parseSaml(entry_parsed['request_postData_text'], 'response')
+                    entry_parsed['saml_response'] = self._parseSaml(entry_parsed['request_postData_text'], 'response')
                 
             # HAR files don't have a unique ID for each request so let's make one to be used
             # for indexing later.
@@ -181,6 +210,9 @@ class FileImporter():
     def _populateTable(self):
         """Generate the main entries table from the parsed HAR data."""
 
+        # sorting needs to be disabled here or bad things happen when loading a new HAR file
+        self.app.entries_table.setSortingEnabled(False)
+
         column_details = self.app.config.getConfig('table_columns')
         column_details = sorted(column_details.items(), key=lambda column: column[1]['index'])
 
@@ -190,7 +222,7 @@ class FileImporter():
         self.app.entries_table.setHorizontalHeaderLabels(table_headers)
         self.app.entries_table.setRowCount(0)
 
-        # disable screen painting until the entry table has been populated.
+        # disable screen painting to reduce flicker
         self.app.entries_table.setUpdatesEnabled(False)
 
         row_current = 0
@@ -200,47 +232,67 @@ class FileImporter():
 
         for key, value in self.har_parsed.items():
             t.insertRow(r)
-            t.setRowHeight(r, 20)
+            t.setRowHeight(r, 22)
             t.setItem(r, 0, QTableWidgetItem(key))
             t.setItem(r, 1, QTableWidgetItem(str(value['startedDateTime'])))
             t.setItem(r, 2, QTableWidgetItem(str(value['serverIPAddress'])))
             t.setItem(r, 3, QTableWidgetItem(str(value['connection'])))
             t.setItem(r, 4, QTableWidgetItem(str(value['request_method']).upper()))
             t.setItem(r, 5, QTableWidgetItem(str(value['request_protocol']).upper()))
-            t.setItem(r, 6, QTableWidgetItem(str(value['request_url'])))
-            t.setItem(r, 7, QTableWidgetItem(str(value['request_httpVersion']).upper()))
-            t.setItem(r, 8, QTableWidgetItem(str(value['response_status'])))
-            t.setItem(r, 9, QTableWidgetItem(str(value['response_statusText'])))
-            t.setItem(r, 10, QTableWidgetItem(str(value['response_content_mimeType']).lower()))
-            t.setItem(r, 11, QTableWidgetItem(str(value['response_httpVersion']).upper()))
-            t.setItem(r, 12, QTableWidgetItem(str(value['response_redirectURL'])))
-            t.setItem(r, 13, HTableWidgetItem(str(int(value['request_headersSize'])), value['request_headersSize']))
-            t.setItem(r, 14, HTableWidgetItem(str(int(value['request_bodySize'])), value['request_bodySize']))
-            t.setItem(r, 15, HTableWidgetItem(str(int(value['response_headersSize'])), value['response_headersSize']))
-            t.setItem(r, 16, HTableWidgetItem(str(int(value['response_bodySize'])), value['response_bodySize']))
-            t.setItem(r, 17, HTableWidgetItem(str(int(value['response_content_size'])), value['response_content_size']))
-            t.setItem(r, 18, HTableWidgetItem(str(int(value['time'])), value['time']))
-            t.setItem(r, 19, HTableWidgetItem(str(int(value['timings_blocked'])), value['timings_blocked']))
-            t.setItem(r, 20, HTableWidgetItem(str(int(value['timings_dns'])), value['timings_dns']))
-            t.setItem(r, 21, HTableWidgetItem(str(int(value['timings_connect'])), value['timings_connect']))
-            t.setItem(r, 22, HTableWidgetItem(str(int(value['timings_send'])), value['timings_send']))
-            t.setItem(r, 23, HTableWidgetItem(str(int(value['timings_wait'])), value['timings_wait']))
-            t.setItem(r, 24, HTableWidgetItem(str(int(value['timings_receive'])), value['timings_receive']))
-            t.setItem(r, 25, HTableWidgetItem(str(int(value['timings_ssl'])), value['timings_ssl']))
+            t.setItem(r, 6, QTableWidgetItem(str(value['request_hostname'])))
+            t.setItem(r, 7, QTableWidgetItem(str(value['request_port'])))
+            t.setItem(r, 8, QTableWidgetItem(str(value['request_path'])))
+            t.setItem(r, 9, QTableWidgetItem(str(value['request_url'])))
+            t.setItem(r, 10, QTableWidgetItem(str(value['request_httpVersion']).upper()))
+            t.setItem(r, 11, QTableWidgetItem(str(value['response_status'])))
+            t.setItem(r, 12, QTableWidgetItem(str(value['response_statusText'])))
+            t.setItem(r, 13, QTableWidgetItem(str(value['response_content_mimeType']).lower()))
+            t.setItem(r, 14, QTableWidgetItem(str(value['response_httpVersion']).upper()))
+            t.setItem(r, 15, QTableWidgetItem(str(value['response_redirectURL'])))
+            t.setItem(r, 16, HTableWidgetItem(str(int(value['request_headersSize'])), value['request_headersSize']))
+            t.setItem(r, 17, HTableWidgetItem(str(int(value['request_bodySize'])), value['request_bodySize']))
+            t.setItem(r, 18, HTableWidgetItem(str(int(value['response_headersSize'])), value['response_headersSize']))
+            t.setItem(r, 19, HTableWidgetItem(str(int(value['response_bodySize'])), value['response_bodySize']))
+            t.setItem(r, 20, HTableWidgetItem(str(int(value['response_content_size'])), value['response_content_size']))
+            t.setItem(r, 21, HTableWidgetItem(str(int(value['time'])), value['time']))
+            t.setItem(r, 22, HTableWidgetItem(str(int(value['timings_blocked'])), value['timings_blocked']))
+            t.setItem(r, 23, HTableWidgetItem(str(int(value['timings_dns'])), value['timings_dns']))
+            t.setItem(r, 24, HTableWidgetItem(str(int(value['timings_connect'])), value['timings_connect']))
+            t.setItem(r, 25, HTableWidgetItem(str(int(value['timings_send'])), value['timings_send']))
+            t.setItem(r, 26, HTableWidgetItem(str(int(value['timings_wait'])), value['timings_wait']))
+            t.setItem(r, 27, HTableWidgetItem(str(int(value['timings_receive'])), value['timings_receive']))
+            t.setItem(r, 28, HTableWidgetItem(str(int(value['timings_ssl'])), value['timings_ssl']))
             r += 1
 
     def _finalise(self):
 
+        # clear previous search results
+        self.app.global_results = None
+        self.app.request_results = None
+        self.app.response_results = None
+
+        # disable searching actions
+        self.app.next_match_entries.setEnabled(False)
+        self.app.clear_match_entries.setEnabled(False)
+        self.app.next_match_request_btn.setEnabled(False)
+        self.app.clear_match_request_btn.setEnabled(False)
+        self.app.next_match_response_btn.setEnabled(False)
+        self.app.clear_match_response_btn.setEnabled(False)
+
+        # organise the columns
         toggleColumnVisibility(self.app)
         resizeColumns(self.app)
 
+        # cell colourization
         if self.app.config.getConfig('cell-colorization'):
             colourizeCells(self.app)
 
+        # unlock the search filters
         self.app.global_searchbox.setReadOnly(False)
         self.app.request_filter.setReadOnly(False)
         self.app.response_filter.setReadOnly(False)
 
+        # enable the header tabs
         self.app.request_tabs.setTabEnabled(0, True)
         self.app.response_tabs.setTabEnabled(0, True)
 
@@ -249,7 +301,7 @@ class FileImporter():
         self.app.entries_table.selectRow(0)
         self.app.entries_table.setFocus()
 
-        # turn screen paining back on
+        # turn screen painting back on
         self.app.entries_table.setUpdatesEnabled(True)
 
         row_count = self.app.entries_table.rowCount()
@@ -257,7 +309,7 @@ class FileImporter():
         elapsed_time = import_stop - self.import_start
 
         self.app.statusbar.showMessage('[OK] Imported {} entries in {:.1f} seconds'.format(row_count, elapsed_time))
-        self.app.setWindowTitle('Harshark 2.0.0 | HTTP Archive (HAR) Viewer | {}'.format(self.har_path))
+        self.app.setWindowTitle('Harshark {} | HTTP Archive (HAR) Viewer | {}'.format(self.app.version, self.har_path))
 
     @staticmethod
     def _parseCookies(headers):
@@ -280,20 +332,39 @@ class FileImporter():
         """Decode any SAML request/response messages found in  the query string (HTTP-Redirect binding)
         or body text (HTTP-POST binding).
         """
+
         if saml_type == 'request':
             for param in saml:
-                if param['name'].lower() == 'samlrequest':
-                    request_decoded = b64decode(param['value'])
-                    request_decompressed = decompress(request_decoded, -15).decode('utf-8')
-                    return request_decompressed
+                # query strings with no names may be recorded as null in HAR (looking at you Fiddler)
+                if param['name'] is not None and param['name'].lower() == 'samlrequest':
+                    try:
+                        request_encoded = param['value'].replace('%2B', '+') \
+                                                        .replace('%2F', '/') \
+                                                        .replace('%3D', '=') \
+                                                        .replace('%0A', '') \
+                                                        .replace('%0D', '')
+                        request_decoded = b64decode(request_encoded)
+                        request_decompressed = decompress(request_decoded, -15).decode('utf-8')
+                        request_formatted = BeautifulSoup(request_decompressed, 'xml').prettify()
+                        return request_formatted
+                    except:
+                        return 'Couldn\'t parse SAML request.'
 
         elif saml_type == 'response':
-            # TODO: what if we don't have a relaystate included? Regex needs improved.
-            saml_response = re.search(r'(?<=SAMLResponse\=).+(?=\&RelayState.+)', saml)
+            saml_response = re.search(r'(?<=SAMLResponse\=)[A-Za-z0-9\%\+\=\/]+', saml)
             if saml_response:
-                response_encoded = saml_response.group().replace('%2B', '+')
-                response_decoded = b64decode(response_encoded).decode('utf-8')
-                return response_decoded
+                response_encoded = saml_response.group()
+                response_encoded = response_encoded.replace('%2B', '+') \
+                                                   .replace('%2F', '/') \
+                                                   .replace('%3D', '=') \
+                                                   .replace('%0A', '') \
+                                                   .replace('%0D', '')
+                try:
+                    response_decoded = b64decode(response_encoded).decode('utf-8')
+                    response_formatted = BeautifulSoup(response_decoded, 'xml').prettify()
+                    return response_formatted
+                except:
+                    return 'Couldn\'t parse SAML response.'
 
         return ''
 

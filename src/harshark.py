@@ -19,6 +19,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QTextOption
+from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QAbstractItemView
 from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import qApp
@@ -39,7 +40,7 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
 
 import configmgr
-import style
+from actions.aboutdialog import AboutDialog
 from actions.columnselectdialog import ColumnSelectDialog
 from actions.entryselector import EntrySelector
 from actions.fileimporter import FileImporter
@@ -58,6 +59,7 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.version = '2.3.0'
         self.config = configmgr.ConfigMgr()
         self.har_summary = None
         self.har_parsed = None
@@ -68,11 +70,34 @@ class MainApp(QMainWindow):
 
     def buildUi(self):
         # ---------------------------------------------------------
+        # FONTS
+        # ---------------------------------------------------------
+        self.font_path = os.path.join(os.path.dirname(__file__), '..', 'fonts')
+
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'droid-sans-mono.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'fira-mono-regular.otf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'hack-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'inconsolata.otf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'pt-mono.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'space-mono-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'ubuntu-mono-regular.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'anonymous.ttf'))
+        QFontDatabase.addApplicationFont(os.path.join(self.font_path, 'inter-ui-regular.ttf'))
+
+        # ---------------------------------------------------------
+        # STYLE
+        # ---------------------------------------------------------
+        self.stylesheet_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'style-light.qss')
+        
+        with open(self.stylesheet_path, 'r') as f:
+            self.setStyleSheet(f.read())
+
+        # ---------------------------------------------------------
         # ICONS
         # ---------------------------------------------------------
         icon_path = os.path.join(os.path.dirname(__file__), '..', 'icons')
 
-        app_icon = QIcon(os.path.join(icon_path, 'crosshairs.svg'))
+        app_icon = QIcon(os.path.join(icon_path, 'harshark.svg'))
         open_icon = QIcon(os.path.join(icon_path, 'folder-open.svg'))
         quit_icon = QIcon(os.path.join(icon_path, 'power-off.svg'))
         case_icon = QIcon(os.path.join(icon_path, 'font.svg'))
@@ -82,7 +107,8 @@ class MainApp(QMainWindow):
         wrap_icon = QIcon(os.path.join(icon_path, 'file-alt.svg'))
         sort_icon = QIcon(os.path.join(icon_path, 'sort-alpha-down.svg'))
         colour_icon = QIcon(os.path.join(icon_path, 'paint-brush.svg'))
-        saml_icon = QIcon(os.path.join(icon_path, 'exclamation-triangle.svg'))
+        saml_icon = QIcon(os.path.join(icon_path, 'address-card.svg'))
+        self.about_icon = QIcon(os.path.join(icon_path, 'question-circle.svg'))
         self.column_select_icon = QIcon(os.path.join(icon_path, 'columns.svg'))
 
         # ---------------------------------------------------------
@@ -164,15 +190,25 @@ class MainApp(QMainWindow):
         menubar_options.addAction(action_columns)
 
         # SAML request and response parsing :: EXPERIMENTAL
-        self.action_enable_saml = QAction('SAML Parsing (Experimental)', self, icon=saml_icon,
-                                     checkable=True, statusTip=('Enable experimental SAML request '
-                                                              'and response parsing. May cause '
-                                                              'application crashes.'))
-        if self.config.getConfig('experimental-saml'):
+        self.action_enable_saml = QAction('SAML Parsing', self, icon=saml_icon,
+                                     checkable=True, statusTip=('Enable SAML request and response parsing. '))
+        
+        if self.config.getConfig('parse-saml'):
             self.action_enable_saml.setChecked(True)
 
         self.action_enable_saml.triggered.connect(self.toggleSaml)
         menubar_options.addAction(self.action_enable_saml)
+
+        # ------------
+        # Help Menu
+        # ------------
+
+        # about
+
+        action_about = QAction('&About Harshark', self, icon=self.about_icon,
+                               statusTip='View program information')
+        action_about.triggered.connect(self.aboutDialog)
+        menubar_help.addAction(action_about)
 
         # ---------------------------------------------------------
         # TOOLBARS
@@ -216,7 +252,7 @@ class MainApp(QMainWindow):
         self.next_match_entries.triggered.connect(self.nextMatchGlobal)
         toolbar_search.addAction(self.next_match_entries)
 
-        # global serach: clear highlights
+        # global search: clear highlights
         self.clear_match_entries = QAction('Clear search', self, enabled=False, icon=clear_icon,
                                            toolTip='Clear search results')
         self.clear_match_entries.triggered.connect(self.clearMatchGlobal)
@@ -333,29 +369,24 @@ class MainApp(QMainWindow):
         response_headers_tab = QWidget()
         response_body_tab = QWidget()
         response_cookie_tab = QWidget()
-        response_saml_tab = QWidget()
 
         self.response_tabs.addTab(response_headers_tab, 'Headers')
         self.response_tabs.addTab(response_cookie_tab, 'Cookies')
         self.response_tabs.addTab(response_body_tab, 'Body')
-        self.response_tabs.addTab(response_saml_tab, 'SAML')
 
         self.response_tabs.setTabEnabled(0, False)
         self.response_tabs.setTabEnabled(1, False)
         self.response_tabs.setTabEnabled(2, False)
-        self.response_tabs.setTabEnabled(3, False)
 
         self.response_headers_tab_text = QTextEdit(readOnly=True)
         self.response_cookie_tab_text = QTextEdit(readOnly=True)
         self.response_body_tab_text = QPlainTextEdit(readOnly=True)
-        self.response_saml_tab_text = QPlainTextEdit(readOnly=True)
 
         # ROBUSTNESS :: We index into this list from a few areas so UI order must be
         # preserved. Can this be made less fragile?
         self.response_textedits = [self.response_headers_tab_text,
                                    self.response_cookie_tab_text,
-                                   self.response_body_tab_text,
-                                   self.response_saml_tab_text]
+                                   self.response_body_tab_text]
 
         for textedit in self.response_textedits:
             if not word_wrap:
@@ -364,7 +395,6 @@ class MainApp(QMainWindow):
         response_headers_tab_layout = QVBoxLayout()
         self.response_body_tab_layout = QVBoxLayout()
         response_cookie_tab_layout = QVBoxLayout()
-        response_saml_tab_layout = QVBoxLayout()
 
         self.response_expand_button = QPushButton(truncate_button_text)
         self.response_expand_button.hide()
@@ -378,9 +408,6 @@ class MainApp(QMainWindow):
 
         response_cookie_tab_layout.addWidget(self.response_cookie_tab_text)
         response_cookie_tab.setLayout(response_cookie_tab_layout)
-
-        response_saml_tab_layout.addWidget(self.response_saml_tab_text)
-        response_saml_tab.setLayout(response_saml_tab_layout)
 
         # un-truncate response body
         self.response_expand_button.clicked.connect(lambda: expandBody(self, 'response'))
@@ -457,14 +484,9 @@ class MainApp(QMainWindow):
         self.setCentralWidget(splitter_v)
 
         # ---------------------------------------------------------
-        # STYLE
-        # ---------------------------------------------------------
-        style.setStyleSheet(self, 'light')
-
-        # ---------------------------------------------------------
         # KICKUP
         # ---------------------------------------------------------
-        self.setWindowTitle('Harshark 2.0.0 | HTTP Archive (HAR) Viewer')
+        self.setWindowTitle('Harshark {} | HTTP Archive (HAR) Viewer'.format(self.version))
         self.setWindowIcon(app_icon)
         self.showMaximized()
         self.show()
@@ -490,17 +512,13 @@ class MainApp(QMainWindow):
         current = self.config.getConfig('word-wrap')
         self.config.setConfig('word-wrap', not current)
 
-        for req_textedit, res_textedit in itertools.zip_longest(self.request_textedits,
-                                                                self.response_textedits):
-            try:
-                if not current:
-                    req_textedit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
-                    res_textedit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
-                else:
-                    req_textedit.setWordWrapMode(QTextOption.NoWrap)
-                    res_textedit.setWordWrapMode(QTextOption.NoWrap)
-            except AttributeError:
-                break
+        all_textedits = self.request_textedits + self.response_textedits
+
+        for textedit in all_textedits:
+            if not current:
+                textedit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+            else:
+                textedit.setWordWrapMode(QTextOption.NoWrap)
 
     def toggleSort(self):
         current = self.config.getConfig('sort-headers')
@@ -516,11 +534,10 @@ class MainApp(QMainWindow):
             colourizeCells(self)
 
     def toggleSaml(self):
-        current = self.config.getConfig('experimental-saml')
-        self.config.setConfig('experimental-saml', not current)
+        current = self.config.getConfig('parse-saml')
+        self.config.setConfig('parse-saml', not current)
         if not current:
-            self.statusbar.showMessage('Experimental SAML parsing has been enabled. '
-                                        'Please re-open the HAR file.')
+            self.statusbar.showMessage('SAML parsing has been enabled. Please re-open the HAR file.')
 
     def globalSearch(self):
         search_results = GlobalSearch(self).found_rows
@@ -572,6 +589,9 @@ class MainApp(QMainWindow):
 
         active_tab_textedit.setTextCursor(next_match)
         active_tab_textedit.setFocus()
+
+    def aboutDialog(self):
+        AboutDialog(self)
 
 def main():
     app = QApplication(sys.argv)

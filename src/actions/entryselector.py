@@ -20,7 +20,6 @@ class EntrySelector():
         self._populateResponseHeaders()
         self._populateResponseCookies()
         self._populateResponseBody()
-        self._populateResponseSaml()
 
     def _collectData(self):
         row_id = self.app.entries_table.item(self.app.entries_table.currentRow(), 0).text()
@@ -78,23 +77,40 @@ class EntrySelector():
         self.app.request_cookie_tab_text.moveCursor(QTextCursor.Start)
 
     def _populateRequestBody(self):
-        post_data = self.entry_data['request_postData_text']
-        # truncate large post bodies by default
-        truncate_length = self.app.config.getConfig('truncate-character-count')
-        if len(post_data) > truncate_length:
-            self.app.request_expand_button.show()
-            self.app.request_body_tab_text.appendPlainText(post_data[:truncate_length])
-            self.app.request_body_tab_text.appendPlainText('. . .')
-        else:
+        post_text = self.entry_data['request_postData_text']
+        post_params = self.entry_data['request_postData_params']
+
+        if post_text:
+            # truncate large post bodies by default
+            truncate_length = self.app.config.getConfig('truncate-character-count')
+            if len(post_text) > truncate_length:
+                self.app.request_expand_button.show()
+                self.app.request_body_tab_text.appendPlainText(post_text[:truncate_length])
+                self.app.request_body_tab_text.appendPlainText('. . .')
+            else:
+                self.app.request_expand_button.hide()
+                self.app.request_body_tab_text.appendPlainText(post_text)
+
+        elif post_params:
+            for param in post_params:
+                for k, v in param.items():
+                    entry = '{}: {}'.format(k, v)
+                    self.app.request_body_tab_text.appendPlainText(entry)
+                self.app.request_body_tab_text.appendPlainText('')
             self.app.request_expand_button.hide()
-            self.app.request_body_tab_text.appendPlainText(post_data)
 
         self.app.request_body_tab_text.moveCursor(QTextCursor.Start)
         self._toggleTabVisibility(self.app.request_tabs, self.app.request_body_tab_text, 3)
     
     def _populateRequestSaml(self):
-        saml_data = self.entry_data['request_saml']
-        self.app.request_saml_tab_text.appendPlainText(saml_data)
+        saml_request = self.entry_data['saml_request']
+        saml_response = self.entry_data['saml_response']
+        
+        if saml_request:
+            self.app.request_saml_tab_text.appendPlainText(saml_request)
+        else:
+            self.app.request_saml_tab_text.appendPlainText(saml_response)
+        
         self.app.request_saml_tab_text.moveCursor(QTextCursor.Start)
         self._toggleTabVisibility(self.app.request_tabs, self.app.request_saml_tab_text, 4)
 
@@ -146,12 +162,6 @@ class EntrySelector():
 
         self.app.response_body_tab_text.moveCursor(QTextCursor.Start)
         self._toggleTabVisibility(self.app.response_tabs, self.app.response_body_tab_text, 2)
-
-    def _populateResponseSaml(self):
-        saml_data = self.entry_data['response_saml']
-        self.app.response_saml_tab_text.appendPlainText(saml_data)
-        self.app.response_saml_tab_text.moveCursor(QTextCursor.Start)
-        self._toggleTabVisibility(self.app.response_tabs, self.app.response_saml_tab_text, 3)
 
     @staticmethod
     def _toggleTabVisibility(tab, text_edit, position):

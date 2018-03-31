@@ -5,19 +5,22 @@
         "bookmark": "#ffffff",
         "default": "#ffffff",
         "method": {
-            "connect": "#8dd3c7",
+            "connect": "#d9d9d9",
             "delete": "#fb8072",
             "get": "#ffffff",
-            "head": "#ccebc5",
-            "options": "#ffed6f",
-            "patch": "#d9d9d9",
-            "post": "#80b1d3",
+            "head": "#80b1d3",
+            "options": "#ccebc5",
+            "patch": "#8a92d9",
+            "post": "#8dd3c7",
             "put": "#fdb462",
             "trace": "#fccde5"
         },
         "protocol": {
+            "ftp": "#80b1d3",
             "http": "#fdb462",
-            "https": "#ffffff"
+            "https": "#ffffff",
+            "ws": "#ccebc5",
+            "wss": "#8dd3c7"
         },
         "search_match": "#ffff99",
         "status": {
@@ -28,7 +31,7 @@
             "500": "#fb8072"
         }
     },
-    "experimental-saml": false,
+    "parse-saml": true,
     "sort-headers": false,
     "table_columns": {
         "connection-id": {
@@ -37,23 +40,41 @@
             "name": "Connection ID",
             "visible": false
         },
+        "hostname": {
+            "category": "Request",
+            "index": 6,
+            "name": "Hostname",
+            "visible": false
+        },
         "http-version-request": {
             "category": "Request",
-            "index": 7,
+            "index": 10,
             "name": "HTTP Version (Request)",
             "visible": false
         },
         "http-version-response": {
             "category": "Response",
-            "index": 11,
+            "index": 14,
             "name": "HTTP Version (Response)",
             "visible": true
         },
         "mime-type": {
             "category": "Response",
-            "index": 10,
+            "index": 13,
             "name": "MIME-Type",
             "visible": true
+        },
+        "path": {
+            "category": "Request",
+            "index": 8,
+            "name": "Path",
+            "visible": false
+        },
+        "port": {
+            "category": "Request",
+            "index": 7,
+            "name": "Port",
+            "visible": false
         },
         "protocol": {
             "category": "Request",
@@ -63,19 +84,19 @@
         },
         "redirect-url": {
             "category": "Response",
-            "index": 12,
+            "index": 15,
             "name": "Redirect URL",
             "visible": false
         },
         "request-body-size": {
             "category": "Request",
-            "index": 14,
+            "index": 17,
             "name": "Request Body Size",
             "visible": true
         },
         "request-header-size": {
             "category": "Request",
-            "index": 13,
+            "index": 16,
             "name": "Request Header Size",
             "visible": true
         },
@@ -88,24 +109,24 @@
         "request-method": {
             "category": "Request",
             "index": 4,
-            "name": "Request Method",
+            "name": "Method",
             "visible": true
         },
         "response-body-size": {
             "category": "Response",
-            "index": 16,
+            "index": 19,
             "name": "Response Body Size",
             "visible": true
         },
         "response-body-size-uncompressed": {
             "category": "Response",
-            "index": 17,
+            "index": 20,
             "name": "Response Body Size (Uncompressed)",
             "visible": false
         },
         "response-header-szie": {
             "category": "Response",
-            "index": 15,
+            "index": 18,
             "name": "Response Header Size",
             "visible": true
         },
@@ -117,61 +138,61 @@
         },
         "status-code": {
             "category": "Response",
-            "index": 8,
+            "index": 11,
             "name": "Status Code",
             "visible": true
         },
         "status-text": {
             "category": "Response",
-            "index": 9,
+            "index": 12,
             "name": "Status Text",
             "visible": false
         },
         "time-blocked": {
             "category": "Timing",
-            "index": 19,
+            "index": 22,
             "name": "Time Blocked",
             "visible": false
         },
         "time-connect": {
             "category": "Timing",
-            "index": 21,
+            "index": 24,
             "name": "Time Connect",
             "visible": false
         },
         "time-dns": {
             "category": "Timing",
-            "index": 20,
+            "index": 23,
             "name": "Time DNS",
             "visible": false
         },
         "time-receive": {
             "category": "Timing",
-            "index": 24,
+            "index": 27,
             "name": "Time Receive",
             "visible": false
         },
         "time-send": {
             "category": "Timing",
-            "index": 22,
+            "index": 25,
             "name": "Time Send",
             "visible": false
         },
         "time-ssl": {
             "category": "Timing",
-            "index": 25,
+            "index": 28,
             "name": "Time SSL",
             "visible": false
         },
         "time-total": {
             "category": "Timing",
-            "index": 18,
+            "index": 21,
             "name": "Time Total",
             "visible": true
         },
         "time-wait": {
             "category": "Timing",
-            "index": 23,
+            "index": 26,
             "name": "Time Wait",
             "visible": false
         },
@@ -183,8 +204,8 @@
         },
         "url": {
             "category": "Request",
-            "index": 6,
-            "name": "URL",
+            "index": 9,
+            "name": "Full URL",
             "visible": true
         }
     },

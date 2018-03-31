@@ -1,10 +1,12 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFontDatabase
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QTreeWidget
 from PyQt5.QtWidgets import QTreeWidgetItem
 from PyQt5.QtWidgets import QTreeWidgetItemIterator
+
 
 from actions.generic import toggleColumnVisibility
 
@@ -19,6 +21,10 @@ class ColumnSelectDialog(QDialog):
         self.initWidget()
 
     def initWidget(self):
+
+        with open(self.app.stylesheet_path, 'r') as f:
+            self.setStyleSheet(f.read())
+
         self.selector_tree = QTreeWidget()
         self.selector_tree.setHeaderHidden(True)
 
@@ -33,9 +39,9 @@ class ColumnSelectDialog(QDialog):
         main_layout.addWidget(self.button_cancel)
 
         self.setLayout(main_layout)
-        self.resize(320, 620)
-        self.setMaximumWidth(320)
-        self.setMaximumHeight(620)
+        self.resize(360, 720)
+        self.setMaximumWidth(360)
+        self.setMaximumHeight(720)
         self.setWindowTitle("Choose Columns to Display")
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowIcon(self.app.column_select_icon)
