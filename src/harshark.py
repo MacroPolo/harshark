@@ -59,7 +59,7 @@ class MainApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.version = '2.3.0'
+        self.version = '2.3.1'
         self.config = configmgr.ConfigMgr()
         self.har_summary = None
         self.har_parsed = None

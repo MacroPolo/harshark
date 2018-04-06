@@ -166,8 +166,12 @@ class FileImporter():
             
             entry_parsed['request_protocol'] = url.scheme
             entry_parsed['request_hostname'] = url.hostname
-            entry_parsed['request_path'] = url.path
-            
+
+            if url.query:
+                entry_parsed['request_path'] = url.path + '?' + url.query
+            else:
+                entry_parsed['request_path'] = url.path
+
             if url.port:
                 entry_parsed['request_port'] = url.port
             elif url.scheme == 'https':
