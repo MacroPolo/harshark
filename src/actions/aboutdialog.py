@@ -38,6 +38,19 @@ SOFTWARE.
     INFO_TEXT = """Harshark: A simple offline HAR viewer.
 
 ---------------------------------------------------------------------
+Release 2.3.1 (6-Apr-2018)
+---------------------------------------------------------------------
+NEW FEATURES:
+N/A
+
+BUG FIXES:
+Fixed bug where query strings weren't included in the 'path' column
+for requests.
+
+NOTES:
+N/A
+
+---------------------------------------------------------------------
 Release 2.3.0 (31-Mar-2018)
 ---------------------------------------------------------------------
 NEW FEATURES:
